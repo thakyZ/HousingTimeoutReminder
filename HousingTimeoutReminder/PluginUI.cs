@@ -77,7 +77,7 @@ namespace NekoBoiNick.HousingTimeoutReminder {
         return;
       }
 
-      settingsUI.Draw();
+      settingsUI.Draw(settingsVisible);
     }
   }
 }

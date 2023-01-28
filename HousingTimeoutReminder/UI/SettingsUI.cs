@@ -9,6 +9,7 @@ using ImGuiNET;
 using Dalamud.Interface.Windowing;
 
 using NekoBoiNick.HousingTimeoutReminder;
+using FFXIVClientStructs.FFXIV.Common.Math;
 
 namespace HousingTimeoutReminder.UI {
   public class SettingsUI : Window, IDisposable {
@@ -17,9 +18,11 @@ namespace HousingTimeoutReminder.UI {
     public SettingsUI(Configuration configuration) : base("Housing Timeout Reminder Settings") {
       this.configuration = configuration;
     }
+    private bool settingsVisible = false;
 
     public void Dispose() {
       this.Dispose(true);
+      GC.SuppressFinalize(this);
     }
 
     private bool _isDisposed = false;
@@ -30,6 +33,10 @@ namespace HousingTimeoutReminder.UI {
       }
     }
     
+    public void Draw(bool show) {
+      settingsVisible = show;
+      this.Draw();
+    }
 
     public override void Draw()
     {

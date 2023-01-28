@@ -1,0 +1,7 @@
+name: Housing Timeout Reminder
+internal_name: HousingTimeoutReminder
+author: Neko Boi Nick
+punchline: Remind you to visit your house just incase you forgor.
+description: |-
+  A plugin to remind you about your house on FFXIV just incase you forgor to visit it.
+repo_url: https://github.com/thakyZ/HousingTimeoutReminder

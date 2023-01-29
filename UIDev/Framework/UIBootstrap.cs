@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 using static SDL2.SDL;
 
 namespace NekoBoiNick.HousingTimeoutReminder.UIDev {
-  internal class UIBootstrap {
+  internal static class UIBootstrap {
     public static unsafe void Inititalize(IPluginUIMock pluginUI) {
       // you can edit this if you want more control over things
       // mainly if you want a regular window instead of transparent overlay

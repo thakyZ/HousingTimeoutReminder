@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Title>HousingTimeoutReminder</Title>
     <Authors>Neko Boi Nick</Authors>
-    <PluginVersion>1.0.1</PluginVersion>
+    <PluginVersion>1.0.1.1</PluginVersion>
     <TargetFramework>net7.0-windows</TargetFramework>
     <Platforms>x64</Platforms>
     <LangVersion>latest</LangVersion>

@@ -49,14 +49,15 @@ namespace HousingTimeoutReminder.UI {
     private const int PlotMax = 60;
     private const int ApartmentMax = 90;
 
-    private string CheckConsistancy(DateTimeOffset nextStamp) {
-      if (nextStamp.ToUnixTimeSeconds() == 0) {
-        return "Never";
+    private (string, string) CheckConsistancy(DateTimeOffset nextStamp, DateTimeOffset lastStamp) {
+      if (lastStamp.ToUnixTimeSeconds() <= 946627200 && nextStamp.ToUnixTimeSeconds() <= 946627200) {
+        return ("Never", "Now");
+      } else if (nextStamp.ToUnixTimeSeconds() < ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds()) {
+        return ($"{lastStamp:yyyy-MM-dd HH:mm:ss}",$"{nextStamp:yyyy-MM-dd HH:mm:ss}");
+        //return ($"{lastStamp.ToUnixTimeSeconds()}",$"{nextStamp.ToUnixTimeSeconds()}");
+      } else {
+        return ($"{lastStamp:yyyy-MM-dd HH:mm:ss}","Now");
       }
-      if (nextStamp.ToUnixTimeSeconds() < ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds()) {
-        return "Now";
-      }
-      return $"{nextStamp:yyyy-MM-dd HH:mm:ss}";
     }
 
     public override void Draw() {
@@ -85,13 +86,12 @@ namespace HousingTimeoutReminder.UI {
 
       if (ImGui.CollapsingHeader("Free Company Estate")) {
         if (Services.housingTimer.playerConfiguration.FreeCompanyEstate.IsValid()) {
-          var LastVisit = CheckConsistancy(DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.FreeCompanyEstate.LastVisit));
-          var NextVisit = CheckConsistancy(DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.FreeCompanyEstate.LastVisit).AddDays(Services.pluginConfig.DaysToWait));
-          ImGui.Text($"Your last visit was on: {LastVisit:yyyy-MM-dd HH:mm:ss}");
+          var Visit = CheckConsistancy(DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.FreeCompanyEstate.LastVisit), DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.FreeCompanyEstate.LastVisit).AddDays(Services.pluginConfig.DaysToWait));
+          ImGui.Text($"Your last visit was on: {Visit.Item1}");
           ImGui.SameLine();
           ImGui.Separator();
           ImGui.SameLine();
-          ImGui.Text($"Your next visit is on: {NextVisit}");
+          ImGui.Text($"Your next visit is on: {Visit.Item2}");
         } else {
           ImGui.Text($"No free company estate set.");
         }
@@ -154,13 +154,12 @@ namespace HousingTimeoutReminder.UI {
 
       if (ImGui.CollapsingHeader("Private Estate")) {
         if (Services.housingTimer.playerConfiguration.PrivateEstate.IsValid()) {
-          var LastVisit = CheckConsistancy(DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.PrivateEstate.LastVisit));
-          var NextVisit = CheckConsistancy(DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.FreeCompanyEstate.LastVisit).AddDays(Services.pluginConfig.DaysToWait));
-          ImGui.Text($"Your last visit was on: {LastVisit:yyyy-MM-dd HH:mm:ss}");
+          var Visit = CheckConsistancy(DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.PrivateEstate.LastVisit), DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.PrivateEstate.LastVisit).AddDays(Services.pluginConfig.DaysToWait));
+          ImGui.Text($"Your last visit was on: {Visit.Item1}");
           ImGui.SameLine();
           ImGui.Separator();
           ImGui.SameLine();
-          ImGui.Text($"Your next visit is on: {NextVisit}");
+          ImGui.Text($"Your next visit is on: {Visit.Item2}");
         } else {
           ImGui.Text($"No private estate set.");
         }
@@ -223,13 +222,12 @@ namespace HousingTimeoutReminder.UI {
 
       if (ImGui.CollapsingHeader("Apartment")) {
         if (Services.housingTimer.playerConfiguration.Apartment.IsValid()) {
-          var LastVisit = CheckConsistancy(DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.Apartment.LastVisit));
-          var NextVisit = CheckConsistancy(DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.FreeCompanyEstate.LastVisit).AddDays(Services.pluginConfig.DaysToWait));
-          ImGui.Text($"Your last visit was on: {LastVisit:yyyy-MM-dd HH:mm:ss}");
+          var Visit = CheckConsistancy(DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.Apartment.LastVisit), DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.Apartment.LastVisit).AddDays(Services.pluginConfig.DaysToWait));
+          ImGui.Text($"Your last visit was on: {Visit.Item1}");
           ImGui.SameLine();
           ImGui.Separator();
           ImGui.SameLine();
-          ImGui.Text($"Your next visit is on: {NextVisit}");
+          ImGui.Text($"Your next visit is on: {Visit.Item2}");
         } else {
           ImGui.Text($"No apartment Set.");
         }

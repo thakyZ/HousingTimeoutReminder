@@ -52,17 +52,14 @@ namespace HousingTimeoutReminder.Handler {
     }
     public (bool, bool, bool) CheckTime() {
       var dateTimeOffset1 = ((DateTimeOffset)DateTime.Now);
-      var dateTimeOffsetLast1 = DateTimeOffset.FromUnixTimeSeconds(playerConfiguration.FreeCompanyEstate.LastVisit);
       var dateTimeOffsetAfterTime1 = DateTimeOffset.FromUnixTimeSeconds(playerConfiguration.FreeCompanyEstate.LastVisit).AddDays(Services.pluginConfig.DaysToWait);
       var dateTimeOffset2 = ((DateTimeOffset)DateTime.Now);
-      var dateTimeOffsetLast2 = DateTimeOffset.FromUnixTimeSeconds(playerConfiguration.PrivateEstate.LastVisit);
       var dateTimeOffsetAfterTime2 = DateTimeOffset.FromUnixTimeSeconds(playerConfiguration.PrivateEstate.LastVisit).AddDays(Services.pluginConfig.DaysToWait);
       var dateTimeOffset3 = ((DateTimeOffset)DateTime.Now);
-      var dateTimeOffsetLast3 = DateTimeOffset.FromUnixTimeSeconds(playerConfiguration.Apartment.LastVisit);
       var dateTimeOffsetAfterTime3 = DateTimeOffset.FromUnixTimeSeconds(playerConfiguration.Apartment.LastVisit).AddDays(Services.pluginConfig.DaysToWait);
-      return (playerConfiguration.FreeCompanyEstate.Enabled && dateTimeOffsetLast1.ToUnixTimeSeconds() > dateTimeOffset1.ToUnixTimeSeconds() && dateTimeOffsetAfterTime1.ToUnixTimeSeconds() < dateTimeOffset1.ToUnixTimeSeconds(),
-        playerConfiguration.PrivateEstate.Enabled && dateTimeOffsetLast2.ToUnixTimeSeconds() > dateTimeOffset2.ToUnixTimeSeconds() && dateTimeOffsetAfterTime2.ToUnixTimeSeconds() < dateTimeOffset2.ToUnixTimeSeconds(),
-        playerConfiguration.Apartment.Enabled && dateTimeOffsetLast3.ToUnixTimeSeconds() > dateTimeOffset3.ToUnixTimeSeconds() && dateTimeOffsetAfterTime3.ToUnixTimeSeconds() < dateTimeOffset3.ToUnixTimeSeconds());
+      return (playerConfiguration.FreeCompanyEstate.Enabled && dateTimeOffset1.ToUnixTimeSeconds() > dateTimeOffsetAfterTime1.ToUnixTimeSeconds(),
+        playerConfiguration.PrivateEstate.Enabled && dateTimeOffset2.ToUnixTimeSeconds() > dateTimeOffsetAfterTime2.ToUnixTimeSeconds(),
+        playerConfiguration.Apartment.Enabled && dateTimeOffset3.ToUnixTimeSeconds() > dateTimeOffsetAfterTime3.ToUnixTimeSeconds());
     }
 
     /// <summary>

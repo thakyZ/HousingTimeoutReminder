@@ -52,7 +52,7 @@ namespace HousingTimeoutReminder.UI {
     private (string, string) CheckConsistancy(DateTimeOffset nextStamp, DateTimeOffset lastStamp) {
       if (lastStamp.ToUnixTimeSeconds() <= 946627200 && nextStamp.ToUnixTimeSeconds() <= 946627200) {
         return ("Never", "Now");
-      } else if (nextStamp.ToUnixTimeSeconds() < ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds()) {
+      } else if (nextStamp.ToUnixTimeSeconds() > ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds()) {
         return ($"{lastStamp:yyyy-MM-dd HH:mm:ss}",$"{nextStamp:yyyy-MM-dd HH:mm:ss}");
         //return ($"{lastStamp.ToUnixTimeSeconds()}",$"{nextStamp.ToUnixTimeSeconds()}");
       } else {

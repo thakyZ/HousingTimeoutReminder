@@ -16,6 +16,7 @@ using Dalamud.Interface;
 using Dalamud;
 using System.Reflection.Metadata.Ecma335;
 using XivCommon.Functions.Housing;
+using Lumina.Excel.GeneratedSheets;
 
 namespace HousingTimeoutReminder.UI {
   public class SettingsUI : Window, IDisposable {
@@ -49,14 +50,41 @@ namespace HousingTimeoutReminder.UI {
     private const int PlotMax = 60;
     private const int ApartmentMax = 90;
 
-    private (string, string) CheckConsistancy(DateTimeOffset nextStamp, DateTimeOffset lastStamp) {
+    private DateTimeOffset ShortenFunction(int type, bool next = false, bool now = false) {
+      long visit = 0;
+      switch (type) {
+        case 0:
+          visit = Services.housingTimer.playerConfiguration.FreeCompanyEstate.LastVisit;
+          break;
+        case 1:
+          visit = Services.housingTimer.playerConfiguration.PrivateEstate.LastVisit;
+          break;
+        case 2:
+          visit = Services.housingTimer.playerConfiguration.Apartment.LastVisit;
+          break;
+      }
+      var date = DateTimeOffset.FromUnixTimeSeconds(visit);
+      if (next) {
+        return date.AddDays(Services.pluginConfig.DaysToWait);
+      }
+      if (now) {
+        return DateTimeOffset.Now;
+      }
+      return date;
+    }
+
+    private (string, string) CheckConsistancy(DateTimeOffset lastStamp, DateTimeOffset nextStamp) {
       if (lastStamp.ToUnixTimeSeconds() <= 946627200 && nextStamp.ToUnixTimeSeconds() <= 946627200) {
         return ("Never", "Now");
-      } else if (nextStamp.ToUnixTimeSeconds() > ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds()) {
+      } else if (lastStamp.ToUnixTimeSeconds() <= nextStamp.ToUnixTimeSeconds() &&
+        nextStamp.ToUnixTimeSeconds() >= ShortenFunction(0, false, true).ToUnixTimeSeconds()) {
         return ($"{lastStamp:yyyy-MM-dd HH:mm:ss}",$"{nextStamp:yyyy-MM-dd HH:mm:ss}");
         //return ($"{lastStamp.ToUnixTimeSeconds()}",$"{nextStamp.ToUnixTimeSeconds()}");
-      } else {
+      } else if (nextStamp.ToUnixTimeSeconds() <= ShortenFunction(0, false, true).ToUnixTimeSeconds()) {
         return ($"{lastStamp:yyyy-MM-dd HH:mm:ss}","Now");
+      } else {
+        return ("Never", "Now");
+
       }
     }
 
@@ -86,7 +114,7 @@ namespace HousingTimeoutReminder.UI {
 
       if (ImGui.CollapsingHeader("Free Company Estate")) {
         if (Services.housingTimer.playerConfiguration.FreeCompanyEstate.IsValid()) {
-          var Visit = CheckConsistancy(DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.FreeCompanyEstate.LastVisit), DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.FreeCompanyEstate.LastVisit).AddDays(Services.pluginConfig.DaysToWait));
+          var Visit = CheckConsistancy(ShortenFunction(0), ShortenFunction(0, true));
           ImGui.Text($"Your last visit was on: {Visit.Item1}");
           ImGui.SameLine();
           ImGui.Separator();
@@ -154,7 +182,7 @@ namespace HousingTimeoutReminder.UI {
 
       if (ImGui.CollapsingHeader("Private Estate")) {
         if (Services.housingTimer.playerConfiguration.PrivateEstate.IsValid()) {
-          var Visit = CheckConsistancy(DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.PrivateEstate.LastVisit), DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.PrivateEstate.LastVisit).AddDays(Services.pluginConfig.DaysToWait));
+          var Visit = CheckConsistancy(ShortenFunction(1), ShortenFunction(1, true));
           ImGui.Text($"Your last visit was on: {Visit.Item1}");
           ImGui.SameLine();
           ImGui.Separator();
@@ -222,7 +250,7 @@ namespace HousingTimeoutReminder.UI {
 
       if (ImGui.CollapsingHeader("Apartment")) {
         if (Services.housingTimer.playerConfiguration.Apartment.IsValid()) {
-          var Visit = CheckConsistancy(DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.Apartment.LastVisit), DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.Apartment.LastVisit).AddDays(Services.pluginConfig.DaysToWait));
+          var Visit = CheckConsistancy(ShortenFunction(2), ShortenFunction(2, true));
           ImGui.Text($"Your last visit was on: {Visit.Item1}");
           ImGui.SameLine();
           ImGui.Separator();
@@ -309,6 +337,12 @@ namespace HousingTimeoutReminder.UI {
       var isTesting = Services.plugin.Testing;
       if (ImGui.Checkbox("##isTesting", ref isTesting)) {
         Services.plugin.Testing = isTesting;
+      }
+      ImGui.SameLine();
+      ImGui.Separator();
+      ImGui.SameLine();
+      if (ImGui.Button("Reset")) {
+        Services.plugin.CheckTimers();
       }
 
       ImGui.End();

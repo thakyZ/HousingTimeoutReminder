@@ -30,21 +30,21 @@ namespace HousingTimeoutReminder.Handler {
 
     public bool CheckTime(int type) {
       if (type == 0 && playerConfiguration.FreeCompanyEstate.Enabled) {
-        var dateTimeOffset = ((DateTimeOffset)DateTime.Now);
+        var dateTimeOffset = (DateTimeOffset)DateTime.Now;
         var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfiguration.FreeCompanyEstate.LastVisit);
-        if (dateTimeOffset.ToUnixTimeSeconds() > dateTimeOffsetLast.ToUnixTimeSeconds()) {
+        if (dateTimeOffsetLast.ToUnixTimeSeconds() < dateTimeOffset.ToUnixTimeSeconds()) {
           return true;
         }
       } else if (type == 1 && playerConfiguration.PrivateEstate.Enabled) {
-        var dateTimeOffset = ((DateTimeOffset)DateTime.Now);
+        var dateTimeOffset = (DateTimeOffset)DateTime.Now;
         var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfiguration.PrivateEstate.LastVisit);
-        if (dateTimeOffset.ToUnixTimeSeconds() > dateTimeOffsetLast.ToUnixTimeSeconds()) {
+        if (dateTimeOffsetLast.ToUnixTimeSeconds() < dateTimeOffset.ToUnixTimeSeconds()) {
           return true;
         }
       } else if (type == 2 && playerConfiguration.Apartment.Enabled) {
-        var dateTimeOffset = ((DateTimeOffset)DateTime.Now);
+        var dateTimeOffset = (DateTimeOffset)DateTime.Now;
         var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfiguration.Apartment.LastVisit);
-        if (dateTimeOffset.ToUnixTimeSeconds() > dateTimeOffsetLast.ToUnixTimeSeconds()) {
+        if (dateTimeOffsetLast.ToUnixTimeSeconds() < dateTimeOffset.ToUnixTimeSeconds()) {
           return true;
         }
       }

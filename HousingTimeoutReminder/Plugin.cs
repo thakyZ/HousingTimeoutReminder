@@ -10,6 +10,7 @@ using Dalamud.Interface.Windowing;
 using HousingTimeoutReminder.UI;
 using XivCommon;
 using Dalamud.Logging;
+using System.Threading.Tasks;
 
 namespace NekoBoiNick.HousingTimeoutReminder {
   /// <summary>
@@ -32,6 +33,8 @@ namespace NekoBoiNick.HousingTimeoutReminder {
     /// 
     /// </summary>
     public WindowSystem WindowSystem = new(name.Replace(" ",String.Empty));
+    public WarningUI WarningUI = new();
+    public SettingsUI SettingsUI = new();
     
     /// <summary>
     /// 
@@ -63,8 +66,8 @@ namespace NekoBoiNick.HousingTimeoutReminder {
 
 
       Services.housingTimer = new();
-      WindowSystem.AddWindow(new SettingsUI());
-      WindowSystem.AddWindow(new WarningUI());
+      WindowSystem.AddWindow(SettingsUI);
+      WindowSystem.AddWindow(WarningUI);
 
       Services.CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand) {
         HelpMessage = "The config menu for the housing timer reminder plugin."
@@ -78,6 +81,7 @@ namespace NekoBoiNick.HousingTimeoutReminder {
       if (Services.ClientState.IsLoggedIn) {
         ClientState_Login(this, new EventArgs());
       }
+      ClientState_TerritoryChanged(null, Services.ClientState.TerritoryType);
     }
 
     /// <summary>
@@ -108,8 +112,19 @@ namespace NekoBoiNick.HousingTimeoutReminder {
       }
     }
 
+    internal void CheckTimers() {
+      Services.housingTimer.ManualCheck();
+      Task.Delay(2000).ContinueWith(t => {
+        if (IsLate.Item1 || IsLate.Item2 || IsLate.Item3) {
+          WarningUI.ResetDismissed();
+          WarningUI.IsOpen = true;
+        }
+      });
+    }
+
     private void ClientState_TerritoryChanged(object sender, ushort e) {
       Services.housingTimer.OnTerritoryChanged(sender, e);
+      CheckTimers();
     }
 
     /// <summary>
@@ -142,15 +157,11 @@ namespace NekoBoiNick.HousingTimeoutReminder {
     /// <param name="command">The Command Name</param>
     /// <param name="args">The Arguments</param>
     private void OnCommand(string command, string args) {
-      var argsParsed = !string.IsNullOrEmpty(args) ? args.Split(" ", StringSplitOptions.RemoveEmptyEntries).Last().ToLower() : String.Empty;
+      var argsParsed = !string.IsNullOrEmpty(args) ? args.Split(" ", StringSplitOptions.RemoveEmptyEntries).Last().ToLower() : string.Empty;
       if (argsParsed.Equals("check")) {
-        Services.housingTimer.ManualCheck();
-        if (IsLate.Item1 || IsLate.Item2 || IsLate.Item3) {
-          (WindowSystem.GetWindow(WarningUI.Name) as WarningUI).ResetDismissed();
-          WindowSystem.GetWindow(WarningUI.Name).IsOpen = true;
-        }
+        CheckTimers();
       } else {
-        WindowSystem.GetWindow(SettingsUI.Name).IsOpen ^= true;
+        SettingsUI.IsOpen ^= true;
       }
     }
 
@@ -160,12 +171,12 @@ namespace NekoBoiNick.HousingTimeoutReminder {
     private void DrawUI() {
       WindowSystem.Draw();
       if (Testing) {
-        WindowSystem.GetWindow(WarningUI.Name).IsOpen = true;
+        WarningUI.IsOpen = true;
       }
     }
 
     public void DrawConfigUI() {
-      WindowSystem.GetWindow(SettingsUI.Name).IsOpen = true;
+      SettingsUI.IsOpen = true;
     }
 
     /// <summary>

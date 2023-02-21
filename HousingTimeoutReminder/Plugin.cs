@@ -50,6 +50,10 @@ namespace NekoBoiNick.HousingTimeoutReminder {
     /// 
     /// </summary>
     public (bool, bool, bool) IsLate { get; set; } = (false, false, false);
+    /// <summary>
+    /// 
+    /// </summary>
+    public (bool, bool, bool) IsDismissed { get; set; } = (false, false, false);
 
     /// <summary>
     /// 
@@ -113,9 +117,8 @@ namespace NekoBoiNick.HousingTimeoutReminder {
     }
 
     internal void CheckTimers() {
-      Services.housingTimer.ManualCheck();
-      Task.Delay(2000).ContinueWith(t => {
-        if (IsLate.Item1 || IsLate.Item2 || IsLate.Item3) {
+      Services.housingTimer.ManualCheck().ContinueWith(t => {
+        if ((IsLate.Item1 && !IsDismissed.Item1) || (IsLate.Item3 && !IsDismissed.Item3) || (IsLate.Item3 && !IsDismissed.Item3)) {
           WarningUI.ResetDismissed();
           WarningUI.IsOpen = true;
         }
@@ -123,6 +126,7 @@ namespace NekoBoiNick.HousingTimeoutReminder {
     }
 
     private void ClientState_TerritoryChanged(object sender, ushort e) {
+      PluginLog.Information($"{e}");
       Services.housingTimer.OnTerritoryChanged(sender, e);
       CheckTimers();
     }

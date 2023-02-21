@@ -2,6 +2,7 @@
 
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
+using Dalamud.Logging;
 
 using FFXIVClientStructs.FFXIV.Common.Math;
 
@@ -50,9 +51,9 @@ namespace HousingTimeoutReminder.UI {
       }
     }
 
-    private bool FCDismissed = false;
-    private bool PDismissed = false;
-    private bool ADismissed = false;
+    private bool FCDismissed { get => Services.plugin.IsDismissed.Item1; set => Services.plugin.IsDismissed = (value, Services.plugin.IsDismissed.Item2, Services.plugin.IsDismissed.Item3); }
+    private bool PDismissed { get => Services.plugin.IsDismissed.Item2; set => Services.plugin.IsDismissed = (Services.plugin.IsDismissed.Item1, value, Services.plugin.IsDismissed.Item3); }
+    private bool ADismissed { get => Services.plugin.IsDismissed.Item3; set => Services.plugin.IsDismissed = (Services.plugin.IsDismissed.Item1, Services.plugin.IsDismissed.Item2, value); }
 
     public void ResetDismissed() {
       FCDismissed = false;
@@ -65,7 +66,7 @@ namespace HousingTimeoutReminder.UI {
         return false;
       }
       this.BgAlpha = 0.5f;
-      Flags = WarningUI.WindowFlags;
+      Flags = WindowFlags;
       Position = Services.pluginConfig.WarningPosition.ToVector2();
       if (type == 0) {
         var dateTimeOffset = ((DateTimeOffset)DateTime.Now);

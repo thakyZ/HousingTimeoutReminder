@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Dalamud.Data;
@@ -90,6 +92,13 @@ namespace HousingTimeoutReminder.Handler {
       };
     }
 
+    public async Task<bool> FunctionsNotNull() {
+      while (Services.plugin.XivCommon.Functions.Housing.Location is null) {
+        await Task.Delay(10);
+      }
+      return true;
+    }
+
     /// <summary>
     /// 
     /// Inside House:
@@ -98,7 +107,7 @@ namespace HousingTimeoutReminder.Handler {
     ///     Apartment: null; ApartmentWing: null; Plot: null; Ward: 26; Yard: 53;
     /// </summary>
     /// <param name="territory"></param>
-    public void CheckLocation(ushort territory) {
+    public bool CheckLocation(ushort territory) {
       if (Services.plugin.XivCommon.Functions.Housing.Location is not null) {
         HousingLocation loc = Services.plugin.XivCommon.Functions.Housing.Location;
         if (IsApartment(territory) && playerConfiguration.Apartment.Enabled) {
@@ -110,7 +119,7 @@ namespace HousingTimeoutReminder.Handler {
             && ConvertToDistrict(territory) == playerConfiguration.Apartment.District && CheckTime(2)) {
             playerConfiguration.Apartment.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
             Services.pluginConfig.PlayerConfigs.Find(x => x.OwnerName.Equals(playerConfiguration.OwnerName)).Update(playerConfiguration);
-            return;
+            return true;
           }
         } else {
           ushort plot = loc.Plot ?? 0;
@@ -120,26 +129,38 @@ namespace HousingTimeoutReminder.Handler {
             && ConvertToDistrict(territory) == playerConfiguration.PrivateEstate.District && CheckTime(1)) {
             playerConfiguration.PrivateEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
             Services.pluginConfig.PlayerConfigs.Find(x => x.OwnerName.Equals(playerConfiguration.OwnerName)).Update(playerConfiguration);
-            return;
+            return true;
           } else if (playerConfiguration.FreeCompanyEstate.Enabled
             && plot == playerConfiguration.FreeCompanyEstate.Plot
             && loc.Ward == playerConfiguration.FreeCompanyEstate.Ward
             && ConvertToDistrict(territory) == playerConfiguration.FreeCompanyEstate.District && CheckTime(0)) {
             playerConfiguration.FreeCompanyEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
             Services.pluginConfig.PlayerConfigs.Find(x => x.OwnerName.Equals(playerConfiguration.OwnerName)).Update(playerConfiguration);
-            return;
+            return true;
           }
         }
       }
       Services.plugin.IsLate = CheckTime();
+      return true;
     }
 
     public void OnTerritoryChanged(object sender, ushort e) {
-      Task.Delay(1000).ContinueWith(t => CheckLocation(e));
+      Task.Run(async () => await FunctionsNotNull()).ContinueWith((t) => CheckLocation(e));
     }
 
-    public void ManualCheck() {
-      OnTerritoryChanged(this, Services.ClientState.TerritoryType);
+    public async Task<bool> ManualCheck() {
+      var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+      var _task = Task.Run(async () => await FunctionsNotNull()).ContinueWith((value) => value.Result && CheckLocation(Services.ClientState.TerritoryType));
+      bool _taskComplete = false;
+      try
+      {
+          _taskComplete = await _task.WaitAsync(cts.Token);
+      }
+      catch (Exception ex) when (ex is OperationCanceledException)
+      {
+          _task.Dispose();
+      }
+      return _taskComplete;
     }
 
     public void Update() {

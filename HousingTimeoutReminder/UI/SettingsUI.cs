@@ -343,6 +343,7 @@ namespace HousingTimeoutReminder.UI {
       ImGui.SameLine();
       if (ImGui.Button("Reset")) {
         Services.plugin.CheckTimers();
+        Services.plugin.IsDismissed = (false, false, false);
       }
 
       ImGui.End();

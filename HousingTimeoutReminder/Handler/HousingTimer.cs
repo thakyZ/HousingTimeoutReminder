@@ -96,6 +96,7 @@ namespace HousingTimeoutReminder.Handler {
       while (Services.plugin.XivCommon.Functions.Housing.Location is null) {
         await Task.Delay(10);
       }
+      await Task.Delay(2000);
       return true;
     }
 

@@ -126,9 +126,20 @@ namespace NekoBoiNick.HousingTimeoutReminder {
       }
     }
 
+    internal (bool, bool, bool) CheckDisabled() {
+      if (Configuration.GetPlayerConfiguration() is null) {
+        return (false, false, false);
+      }
+      var _fc = Configuration.GetPlayerConfiguration().FreeCompanyEstate.Enabled;
+      var _pe = Configuration.GetPlayerConfiguration().PrivateEstate.Enabled;
+      var _ap = Configuration.GetPlayerConfiguration().Apartment.Enabled;
+      return (_fc, _pe, _ap);
+    }
+
     internal void CheckTimers() {
       Services.housingTimer.ManualCheck().ContinueWith((task) => {
-        if ((IsLate.Item1 && !IsDismissed.Item1) || (IsLate.Item3 && !IsDismissed.Item3) || (IsLate.Item3 && !IsDismissed.Item3)) {
+        var check = CheckDisabled();
+        if ((IsLate.Item1 && !IsDismissed.Item1 && check.Item1) || (IsLate.Item3 && !IsDismissed.Item3 && check.Item2) || (IsLate.Item3 && !IsDismissed.Item3 && check.Item3)) {
           WarningUI.ResetDismissed();
           WarningUI.IsOpen = true;
         }
@@ -196,7 +207,7 @@ namespace NekoBoiNick.HousingTimeoutReminder {
     /// 
     /// </summary>
     /// <returns></returns>
-    public string GetCurrentPlayerName() {
+    public static string GetCurrentPlayerName() {
       if (Services.ClientState == null || Services.ClientState.LocalPlayer == null || Services.ClientState.LocalPlayer.Name == null) {
         return null;
       }

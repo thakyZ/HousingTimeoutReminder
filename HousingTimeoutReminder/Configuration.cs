@@ -1,10 +1,14 @@
 ﻿using Dalamud.Configuration;
+using Dalamud.Logging;
 using Dalamud.Plugin;
 
 using FFXIVClientStructs.FFXIV.Common.Math;
 
+using Lumina.Excel.GeneratedSheets;
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace NekoBoiNick.HousingTimeoutReminder {
   /// <summary>
@@ -195,6 +199,10 @@ namespace NekoBoiNick.HousingTimeoutReminder {
     /// </summary>
     [NonSerialized]
     private DalamudPluginInterface pluginInterface;
+
+    public static PerPlayerConfiguration? GetPlayerConfiguration() {
+      return Services.pluginConfig.PlayerConfigs.Find(x => x.OwnerName == Plugin.GetCurrentPlayerName());
+    }
 
     /// <summary>
     /// 

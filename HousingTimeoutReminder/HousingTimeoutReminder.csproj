@@ -71,15 +71,22 @@
 
   <ItemGroup>
     <PackageReference Include="DalamudPackager" Version="2.1.10" />
-    <PackageReference Include="ILRepack" Version="2.0.18" />
-    <PackageReference Include="XivCommon" Version="7.0.0-alpha.1" />
+    <PackageReference Include="ILRepack" Version="2.0.18" GeneratePathProperty="true"/>
+    <PackageReference Include="XivCommon" Version="7.0.0-alpha.1" GeneratePathProperty="true" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="HousingTimeoutReminder.yaml" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <None Include="$(PkgXivCommon)\lib\net7.0-windows7.0\XivCommon.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <Content Include="HousingTimeoutReminder.yaml">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+    <Folder Include="images\"/>
+    <Content Include="..\README.md" CopyToOutputDirectory="Never"/>
+    <Content Include="..\LICENSE" CopyToOutputDirectory="Never"/>
+    <Content Include="..\.gitignore" CopyToOutputDirectory="Never"/>
+    <EditorConfigFiles Remove="..\.editorconfig"/>
     <None Include="..\.editorconfig" Link=".editorconfig" />
   </ItemGroup>
 

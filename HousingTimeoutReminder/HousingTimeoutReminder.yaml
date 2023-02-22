@@ -8,5 +8,6 @@ RepoUrl: https://github.com/thakyZ/HousingTimeoutReminder
 ApplicableVersion: any
 Tags:
   - Utility
+DalamudApiLevel: 8
 IconUrl: https://raw.githubusercontent.com/thakyZ/MyDalamudPlugins/main/plugins/HousingTimeoutReminder/images/icon.png
 Changelog: Refactored Code.

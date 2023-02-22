@@ -11,23 +11,28 @@ using Dalamud.Logging;
 
 using Lumina.Excel.GeneratedSheets;
 
-using NekoBoiNick.HousingTimeoutReminder;
+using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder;
 
 using XivCommon.Functions.Housing;
 
-namespace HousingTimeoutReminder.Handler {
+namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler {
   public class HousingTimer {
     public PerPlayerConfiguration playerConfiguration { get; set; }
+
     public HousingTimer() {
+      if (Configuration.GetPlayerConfiguration() is null) {
+        playerConfiguration = Configuration.GetPlayerConfiguration()!;
+      } else {
+        playerConfiguration = new PerPlayerConfiguration() { OwnerName = "Unknown" };
+      }
     }
 
-    public void Load(string playerName) {
-      playerConfiguration = Services.pluginConfig.PlayerConfigs.Find(x => x.OwnerName.Equals(playerName));
+    public void Load() {
+      playerConfiguration = Configuration.GetPlayerConfiguration()!;
     }
 
     public void Unload() {
-      Services.pluginConfig.PlayerConfigs.Find(x => x.OwnerName.Equals(playerConfiguration.OwnerName)).Update(playerConfiguration);
-      playerConfiguration = null;
+      Configuration.GetPlayerConfiguration()!.Update(playerConfiguration);
     }
 
     public bool CheckTime(int type) {
@@ -65,10 +70,10 @@ namespace HousingTimeoutReminder.Handler {
     }
 
     /// <summary>
-    /// 
+    /// Gets if the player is in an appartment per the <paramref name="territory"/> id.
     /// </summary>
-    /// <param name="territory"></param>
-    /// <returns></returns>
+    /// <param name="territory">The ID for the territory the player is in.</param>
+    /// <return>If the player is in an appartment</return>
     public bool IsApartment(ushort territory) {
       return territory switch {
         610 or 608 or 609 or 999 or 655 => true,
@@ -77,10 +82,10 @@ namespace HousingTimeoutReminder.Handler {
     }
 
     /// <summary>
-    /// 
+    /// Convert the <paramref name="territory"/> to the <see cref="District"/>
     /// </summary>
-    /// <param name="territory"></param>
-    /// <returns></returns>
+    /// <param name="territory">The ID for the territory the player is in.</param>
+    /// <return>The disctrict the player is in.</return>
     public District ConvertToDistrict(ushort territory) {
       return territory switch {
         345 or 346 or 347 or 386 or 424 or 610 => District.Goblet,
@@ -92,6 +97,10 @@ namespace HousingTimeoutReminder.Handler {
       };
     }
 
+    /// <summary>
+    /// <see langword="async"/> function to get if <see cref="XivCommon.Functions"/> is <see langword="null"/> or not.
+    /// </summary>
+    /// <return>Returns delayed bool until function is not <see langword="null"/>.</return>
     public async Task<bool> FunctionsNotNull() {
       while (Services.plugin.XivCommon.Functions.Housing.Location is null) {
         await Task.Delay(10);
@@ -101,13 +110,14 @@ namespace HousingTimeoutReminder.Handler {
     }
 
     /// <summary>
-    /// 
+    /// Checks the location of the player and returns <see langword="true"/> if successfull.
     /// Inside House:
     ///     Apartment: null; ApartmentWing: null; Plot: 53; Ward: 26; Yard: null;
     /// On the Yard:
     ///     Apartment: null; ApartmentWing: null; Plot: null; Ward: 26; Yard: 53;
     /// </summary>
-    /// <param name="territory"></param>
+    /// <param name="territory">The ID for the territory the player is in.</param>
+    /// <return>Returns <see langword="true"/> if successfull.</return>
     public bool CheckLocation(ushort territory) {
       if (Services.plugin.XivCommon.Functions.Housing.Location is not null) {
         HousingLocation loc = Services.plugin.XivCommon.Functions.Housing.Location;
@@ -119,7 +129,7 @@ namespace HousingTimeoutReminder.Handler {
             && loc.Ward == playerConfiguration.Apartment.Ward
             && ConvertToDistrict(territory) == playerConfiguration.Apartment.District && CheckTime(2)) {
             playerConfiguration.Apartment.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
-            Services.pluginConfig.PlayerConfigs.Find(x => x.OwnerName.Equals(playerConfiguration.OwnerName)).Update(playerConfiguration);
+            Configuration.GetPlayerConfiguration()!.Update(playerConfiguration);
             return true;
           }
         } else {
@@ -129,14 +139,14 @@ namespace HousingTimeoutReminder.Handler {
             && loc.Ward == playerConfiguration.PrivateEstate.Ward
             && ConvertToDistrict(territory) == playerConfiguration.PrivateEstate.District && CheckTime(1)) {
             playerConfiguration.PrivateEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
-            Services.pluginConfig.PlayerConfigs.Find(x => x.OwnerName.Equals(playerConfiguration.OwnerName)).Update(playerConfiguration);
+            Configuration.GetPlayerConfiguration()!.Update(playerConfiguration);
             return true;
           } else if (playerConfiguration.FreeCompanyEstate.Enabled
             && plot == playerConfiguration.FreeCompanyEstate.Plot
             && loc.Ward == playerConfiguration.FreeCompanyEstate.Ward
             && ConvertToDistrict(territory) == playerConfiguration.FreeCompanyEstate.District && CheckTime(0)) {
             playerConfiguration.FreeCompanyEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
-            Services.pluginConfig.PlayerConfigs.Find(x => x.OwnerName.Equals(playerConfiguration.OwnerName)).Update(playerConfiguration);
+            Configuration.GetPlayerConfiguration()!.Update(playerConfiguration);
             return true;
           }
         }
@@ -145,14 +155,19 @@ namespace HousingTimeoutReminder.Handler {
       return true;
     }
 
-    public void OnTerritoryChanged(object sender, ushort e) {
+    /// <summary>
+    /// The function to call when changing instance. Checks timers after.
+    /// </summary>
+    /// <param name="sender">The object instance of the sender.</param>
+    /// <param name="e">The territory ID as a ushort.</param>
+    public void OnTerritoryChanged(ushort e) {
       Task.Run(async () => await FunctionsNotNull()).ContinueWith((t) => CheckLocation(e));
     }
 
     public async Task<bool> ManualCheck() {
       var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
       var _task = Task.Run(async () => await FunctionsNotNull());
-      bool _taskComplete = false;
+      bool _taskComplete;
       try
       {
         var _taskContinue = _task.ContinueWith((value) => value.Result && CheckLocation(Services.ClientState.TerritoryType));
@@ -168,7 +183,7 @@ namespace HousingTimeoutReminder.Handler {
     }
 
     public void Update() {
-      Services.pluginConfig.PlayerConfigs.Find(x => x.OwnerName.Equals(playerConfiguration.OwnerName)).Update(playerConfiguration);
+      Configuration.GetPlayerConfiguration()!.Update(playerConfiguration);
       Services.pluginConfig.Save();
     }
   }

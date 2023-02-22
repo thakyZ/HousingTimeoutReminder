@@ -9,11 +9,10 @@ using FFXIVClientStructs.FFXIV.Common.Math;
 
 using ImGuiNET;
 
-using NekoBoiNick.HousingTimeoutReminder;
+using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder;
 
-namespace HousingTimeoutReminder.UI {
+namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.UI {
   public class SettingsUI : Window, IDisposable {
-
     private const ImGuiWindowFlags WindowFlags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse |
                                                  ImGuiWindowFlags.NoScrollbar |
                                                  ImGuiWindowFlags.NoScrollWithMouse;
@@ -37,7 +36,7 @@ namespace HousingTimeoutReminder.UI {
       }
     }
 
-    private Dictionary<string, int> DistrictDict = new() { { "Unknown", 0 }, { "Goblet", 1 }, { "Mist", 2 }, { "LavenderBeds", 3 }, { "Empyreum", 4 }, { "Shirogane", 5 } };
+    private readonly Dictionary<string, int> DistrictDict = new() { { "Unknown", 0 }, { "Goblet", 1 }, { "Mist", 2 }, { "LavenderBeds", 3 }, { "Empyreum", 4 }, { "Shirogane", 5 } };
 
     private const int WardMax = 32;
     private const int PlotMax = 60;
@@ -77,7 +76,6 @@ namespace HousingTimeoutReminder.UI {
         return ($"{lastStamp:yyyy-MM-dd HH:mm:ss}","Now");
       } else {
         return ("Never", "Now");
-
       }
     }
 
@@ -114,7 +112,7 @@ namespace HousingTimeoutReminder.UI {
           ImGui.SameLine();
           ImGui.Text($"Your next visit is on: {Visit.Item2}");
         } else {
-          ImGui.Text($"No free company estate set.");
+          ImGui.Text("No free company estate set.");
         }
         ImGui.Text("Enabled");
         ImGui.SameLine();
@@ -182,7 +180,7 @@ namespace HousingTimeoutReminder.UI {
           ImGui.SameLine();
           ImGui.Text($"Your next visit is on: {Visit.Item2}");
         } else {
-          ImGui.Text($"No private estate set.");
+          ImGui.Text("No private estate set.");
         }
         ImGui.Text("Enabled");
         ImGui.SameLine();
@@ -250,7 +248,7 @@ namespace HousingTimeoutReminder.UI {
           ImGui.SameLine();
           ImGui.Text($"Your next visit is on: {Visit.Item2}");
         } else {
-          ImGui.Text($"No apartment Set.");
+          ImGui.Text("No apartment Set.");
         }
         ImGui.Text("Enabled");
         ImGui.SameLine();

@@ -8,5 +8,5 @@ repo_url: https://github.com/thakyZ/HousingTimeoutReminder
 applicable_version: any
 tags:
   - Utility
-icon_url: "https://raw.githubusercontent.com/thakyZ/MyDalamudPlugins/main/plugins/HousingTimeoutReminder/images/icon.png"
-changelog: Fixed apartment logic and others
+icon_url: https://raw.githubusercontent.com/thakyZ/MyDalamudPlugins/main/plugins/HousingTimeoutReminder/images/icon.png
+changelog: Refactored Code.

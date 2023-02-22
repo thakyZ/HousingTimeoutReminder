@@ -7,9 +7,9 @@ using FFXIVClientStructs.FFXIV.Common.Math;
 
 using ImGuiNET;
 
-using NekoBoiNick.HousingTimeoutReminder;
+using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder;
 
-namespace HousingTimeoutReminder.UI {
+namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.UI {
   public class WarningUI : Window, IDisposable {
     public static string Name { get => "Housing Timeout Reminder Warning"; }
 
@@ -43,7 +43,7 @@ namespace HousingTimeoutReminder.UI {
               ImGuiWindowFlags.NoTitleBar;
       this.BgAlpha = 0.5f;
       if (!oldPoistion.Equals(ImGui.GetWindowPos())) {
-        Services.pluginConfig.WarningPosition.FromVector2(ImGui.GetWindowPos());
+        Services.pluginConfig.WarningPosition = HousingTimeoutReminder.Position.FromVector2(ImGui.GetWindowPos());
         oldPoistion = ImGui.GetWindowPos();
       }
     }
@@ -64,7 +64,7 @@ namespace HousingTimeoutReminder.UI {
       }
       this.BgAlpha = 0.5f;
       Flags = WindowFlags;
-      Position = Services.pluginConfig.WarningPosition.ToVector2();
+      Position = HousingTimeoutReminder.Position.ToVector2(Services.pluginConfig.WarningPosition);
       if (type == 0) {
         var dateTimeOffset = ((DateTimeOffset)DateTime.Now);
         var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.FreeCompanyEstate.LastVisit);

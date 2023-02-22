@@ -10,13 +10,13 @@
     </Description>
     <PackageProjectUrl>https://github.com/thakyZ/BetterMinionRoulette-Dalamud</PackageProjectUrl>
     <Copyright></Copyright>
-    <AssemblyTitle>Housing Timeout Reminder</AssemblyTitle>
+    <Title>Housing Timeout Reminder</Title>
   </PropertyGroup>
 
   <PropertyGroup>
-    <AssemblyName>$(AssemblyTitle)</AssemblyName>
-    <Title>$(AssemblyTitle)</Title>
-    <Product>$(AssemblyTitle)</Product>
+    <AssemblyTitle>$(Title)</AssemblyTitle>
+    <AssemblyName>$(Title.Replace(" ", ""))</AssemblyName>
+    <Product>$(Title)</Product>
     <PluginVersion>$(Version)</PluginVersion>
     <FileVersion>$(Version)</FileVersion>
     <AssemblyVersion>$(Version)</AssemblyVersion>
@@ -36,7 +36,7 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>bin\$(Configuration)</OutputPath>
-    <RootNamespace>NekoBoiNick.FFXIV.DalamudPlugin.$(AssemblyTitle.Replace(" ", "_"))</RootNamespace>
+    <RootNamespace>NekoBoiNick.FFXIV.DalamudPlugin.$(Title.Replace(" ", ""))</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
@@ -120,7 +120,6 @@
 
   <Target Name="CleanOutDir" AfterTargets="Build">
     <ItemGroup>
-      <DeleteAssemblies Include="$(TargetDir)*.pdb" />
       <DeleteAssemblies Include="$(TargetDir)$(AssemblyName).deps.json" />
     </ItemGroup>
     <Message Text="Deleting @(DeleteAssemblies)" Importance="high" />

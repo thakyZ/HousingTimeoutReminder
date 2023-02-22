@@ -55,12 +55,14 @@ namespace NekoBoiNick.HousingTimeoutReminder {
     /// </summary>
     public (bool, bool, bool) IsDismissed { get; set; } = (false, false, false);
 
+    private Services _services;
+
     /// <summary>
     /// 
     /// </summary>
     /// <param name="pluginInterface"></param>
     public Plugin([RequiredVersion("1.0")] DalamudPluginInterface pluginInterface) {
-      pluginInterface.Create<Services>();
+      _services = pluginInterface.Create<Services>();
 
       Services.plugin = this;
 
@@ -105,13 +107,21 @@ namespace NekoBoiNick.HousingTimeoutReminder {
     protected virtual void Dispose(bool disposing) {
       if (!_isDisposed && disposing) {
         WindowSystem.RemoveAllWindows();
+        WarningUI.Dispose();
+        SettingsUI.Dispose();
+        WarningUI = null;
+        SettingsUI = null;
         XivCommon.Dispose();
+        Services.housingTimer = null;
+        Services.plugin = null;
         Services.PluginInterface.UiBuilder.Draw -= DrawUI;
         Services.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
         Services.ClientState.TerritoryChanged -= ClientState_TerritoryChanged;
         Services.ClientState.Login -= ClientState_Login;
         Services.ClientState.Logout -= ClientState_Logout;
         Services.CommandManager.RemoveHandler(CommandName);
+        Services.pluginConfig.Dispose();
+        _services = null;
         this._isDisposed = true;
       }
     }
@@ -126,7 +136,6 @@ namespace NekoBoiNick.HousingTimeoutReminder {
     }
 
     private void ClientState_TerritoryChanged(object sender, ushort e) {
-      PluginLog.Information($"{e}");
       Services.housingTimer.OnTerritoryChanged(sender, e);
       CheckTimers();
     }

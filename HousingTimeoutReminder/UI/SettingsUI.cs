@@ -1,22 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
+using Dalamud.Interface;
+using Dalamud.Interface.Windowing;
+
+using FFXIVClientStructs.FFXIV.Common.Math;
 
 using ImGuiNET;
 
-using Dalamud.Interface.Windowing;
-
 using NekoBoiNick.HousingTimeoutReminder;
-using FFXIVClientStructs.FFXIV.Common.Math;
-using HousingTimeoutReminder.Handler;
-using Dalamud.Game.Text;
-using Dalamud.Interface;
-using Dalamud;
-using System.Reflection.Metadata.Ecma335;
-using XivCommon.Functions.Housing;
-using Lumina.Excel.GeneratedSheets;
 
 namespace HousingTimeoutReminder.UI {
   public class SettingsUI : Window, IDisposable {

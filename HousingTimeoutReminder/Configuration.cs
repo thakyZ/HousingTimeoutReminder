@@ -221,5 +221,9 @@ namespace NekoBoiNick.HousingTimeoutReminder {
     public void Save() {
       this.pluginInterface.SavePluginConfig(this);
     }
+
+    public void Dispose() {
+      pluginInterface = null;
+    }
   }
 }

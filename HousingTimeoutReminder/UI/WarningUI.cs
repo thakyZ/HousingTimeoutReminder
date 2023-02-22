@@ -2,11 +2,8 @@
 
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
 
 using FFXIVClientStructs.FFXIV.Common.Math;
-
-using HousingTimeoutReminder.Handler;
 
 using ImGuiNET;
 

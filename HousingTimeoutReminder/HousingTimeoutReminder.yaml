@@ -1,13 +1,13 @@
-Name: Housing Timeout Reminder
-InternalName: HousingTimeoutReminder
-Author: Neko Boi Nick
-Punchline: Remind you to visit your house just incase you forgot.
-Description: |-
+name: Housing Timeout Reminder
+internal_name: HousingTimeoutReminder
+author: Neko Boi Nick
+punchline: Remind you to visit your house just incase you forgot.
+description: |-
   A plugin to remind you about your house on FFXIV just incase you forgot to visit it.
-RepoUrl: https://github.com/thakyZ/Dalamud-HousingTimeoutReminder
-ApplicableVersion: any
-Tags:
+repo_url: https://github.com/thakyZ/Dalamud-HousingTimeoutReminder
+applicable_version: any
+tags:
   - Utility
-DalamudApiLevel: 8
-IconUrl: https://raw.githubusercontent.com/thakyZ/MyDalamudPlugins/main/plugins/HousingTimeoutReminder/images/icon.png
-Changelog: Refactored Code.
+dalamud_api_level: 8
+icon_url: https://raw.githubusercontent.com/thakyZ/MyDalamudPlugins/main/plugins/HousingTimeoutReminder/images/icon.png
+changelog: Refactored Code.

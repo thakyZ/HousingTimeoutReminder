@@ -117,7 +117,7 @@ namespace NekoBoiNick.HousingTimeoutReminder {
     }
 
     internal void CheckTimers() {
-      Services.housingTimer.ManualCheck().ContinueWith(t => {
+      Services.housingTimer.ManualCheck().ContinueWith((task) => {
         if ((IsLate.Item1 && !IsDismissed.Item1) || (IsLate.Item3 && !IsDismissed.Item3) || (IsLate.Item3 && !IsDismissed.Item3)) {
           WarningUI.ResetDismissed();
           WarningUI.IsOpen = true;

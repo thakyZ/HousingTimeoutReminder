@@ -149,16 +149,19 @@ namespace HousingTimeoutReminder.Handler {
     }
 
     public async Task<bool> ManualCheck() {
-      var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-      var _task = Task.Run(async () => await FunctionsNotNull()).ContinueWith((value) => value.Result && CheckLocation(Services.ClientState.TerritoryType));
+      var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+      var _task = Task.Run(async () => await FunctionsNotNull());
       bool _taskComplete = false;
       try
       {
-          _taskComplete = await _task.WaitAsync(cts.Token);
+        var _taskContinue = _task.ContinueWith((value) => value.Result && CheckLocation(Services.ClientState.TerritoryType));
+        _taskComplete = await _taskContinue.WaitAsync(cts.Token);
       }
       catch (Exception ex) when (ex is OperationCanceledException)
       {
-          _task.Dispose();
+        PluginLog.Error("Errored when waiting for task to complete.");
+        PluginLog.Error(ex.Message);
+        return false;
       }
       return _taskComplete;
     }

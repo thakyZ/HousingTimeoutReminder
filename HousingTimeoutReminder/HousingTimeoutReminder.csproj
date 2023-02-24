@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>1.0.1.8</Version>
+    <Version>1.0.1.9</Version>
     <Company></Company>
     <Authors>Neko Boi Nick</Authors>
     <Description>
@@ -35,25 +35,27 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <OutputPath>bin\$(Configuration)</OutputPath>
     <RootNamespace>NekoBoiNick.FFXIV.DalamudPlugin.$(Title.Replace(" ", ""))</RootNamespace>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <AssemblyName>$(Title.Replace(" ", ""))</AssemblyName>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <AssemblyName>$(Title.Replace(" ", ""))2</AssemblyName>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>$(AppData)\XIVLauncher\devPlugins\HUDManager\</OutputPath>
+    <BaseOutputPath>$(AppData)\XIVLauncher\devPlugins\HUDManager\</BaseOutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -97,24 +99,36 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <Content Include="HousingTimeoutReminder2.yaml" Link="HousingTimeoutReminder.yaml">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(Configuration)' == 'Release' ">
+    <Content Include="HousingTimeoutReminder.yaml" Link="HousingTimeoutReminder.yaml">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="DalamudPackager" Version="2.1.10" />
-    <PackageReference Include="ILRepack" Version="2.0.18" GeneratePathProperty="true"/>
+    <PackageReference Include="ILRepack" Version="2.0.18" GeneratePathProperty="true" />
     <PackageReference Include="XivCommon" Version="7.0.0-alpha.1" GeneratePathProperty="true" />
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="bin\**" />
+    <None Remove="bin\**" />
     <None Include="$(PkgXivCommon)\lib\net7.0-windows7.0\XivCommon.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <Content Include="HousingTimeoutReminder.yaml">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Content>
-    <Folder Include="images\"/>
-    <Content Include="..\README.md" CopyToOutputDirectory="Never"/>
-    <Content Include="..\LICENSE" CopyToOutputDirectory="Never"/>
-    <Content Include="..\.gitignore" CopyToOutputDirectory="Never"/>
-    <EditorConfigFiles Remove="..\.editorconfig"/>
+    <Folder Include="images\" />
+    <None Include="..\.github\workflows\build.yml" Link="build.yml" />
+    <Content Include="..\README.md" CopyToOutputDirectory="Never" />
+    <Content Include="..\LICENSE" CopyToOutputDirectory="Never" />
+    <Content Include="..\.gitignore" CopyToOutputDirectory="Never" />
+    <EditorConfigFiles Remove="..\.editorconfig" />
     <None Include="..\.editorconfig" Link=".editorconfig" />
   </ItemGroup>
 

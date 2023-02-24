@@ -129,7 +129,7 @@ namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler {
             && loc.Ward == playerConfiguration.Apartment.Ward
             && ConvertToDistrict(territory) == playerConfiguration.Apartment.District && CheckTime(2)) {
             playerConfiguration.Apartment.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
-            Configuration.GetPlayerConfiguration()!.Update(playerConfiguration);
+            Update();
             return true;
           }
         } else {
@@ -139,14 +139,14 @@ namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler {
             && loc.Ward == playerConfiguration.PrivateEstate.Ward
             && ConvertToDistrict(territory) == playerConfiguration.PrivateEstate.District && CheckTime(1)) {
             playerConfiguration.PrivateEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
-            Configuration.GetPlayerConfiguration()!.Update(playerConfiguration);
+            Update();
             return true;
           } else if (playerConfiguration.FreeCompanyEstate.Enabled
             && plot == playerConfiguration.FreeCompanyEstate.Plot
             && loc.Ward == playerConfiguration.FreeCompanyEstate.Ward
             && ConvertToDistrict(territory) == playerConfiguration.FreeCompanyEstate.District && CheckTime(0)) {
             playerConfiguration.FreeCompanyEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
-            Configuration.GetPlayerConfiguration()!.Update(playerConfiguration);
+            Update();
             return true;
           }
         }

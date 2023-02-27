@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>1.0.1.9</Version>
+    <Version>1.0.2.0</Version>
     <Company></Company>
     <Authors>Neko Boi Nick</Authors>
     <Description>
@@ -132,16 +132,17 @@
     <None Include="..\.editorconfig" Link=".editorconfig" />
   </ItemGroup>
 
-  <Target Name="CleanOutDir" AfterTargets="Build">
+  <!--<Target Name="CleanOutDir" AfterTargets="Build">
     <ItemGroup>
       <DeleteAssemblies Include="$(TargetDir)$(AssemblyName).deps.json" />
     </ItemGroup>
     <Message Text="Deleting @(DeleteAssemblies)" Importance="high" />
     <Delete Files="@(DeleteAssemblies)" />
     <RemoveDir Directories="$(TargetDir)\ref\" />
-  </Target>
+  </Target>-->
 
-  <Target Name="PostBuild" AfterTargets="CleanOutDir">
+  <!--<Target Name="PostBuild" AfterTargets="CleanOutDir">-->
+  <Target Name="PostBuild" AfterTargets="Build">
     <ItemGroup>
       <InputAssemblies Include="$(TargetPath)" />
       <InputAssemblies Include="$(TargetDir)*.dll" Exclude="$(TargetPath)" />

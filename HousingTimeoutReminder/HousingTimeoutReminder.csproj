@@ -53,8 +53,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>$(AppData)\XIVLauncher\devPlugins\HUDManager\</OutputPath>
-    <BaseOutputPath>$(AppData)\XIVLauncher\devPlugins\HUDManager\</BaseOutputPath>
+    <OutputPath>$(AppData)\XIVLauncher\devPlugins\$(Title.Replace(" ", ""))\</OutputPath>
+    <BaseOutputPath>$(AppData)\XIVLauncher\devPlugins\$(Title.Replace(" ", ""))\</BaseOutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>

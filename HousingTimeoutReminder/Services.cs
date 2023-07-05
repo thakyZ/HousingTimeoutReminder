@@ -9,19 +9,18 @@ using Dalamud.Plugin;
 
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler;
 
-namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder {
-  internal class Services {
-    public static Plugin plugin { get; set; } = null!;
-    public static Configuration pluginConfig { get; set; } = null!;
-    public static HousingTimer housingTimer { get; set; } = null!;
+namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder;
+internal class Services {
+  public static Plugin PluginInstance { get; set; } = null!;
+  public static Configuration Config { get; set; } = null!;
+  public static HousingTimer HousingTimer { get; set; } = null!;
 
-    [PluginService] public static ClientState ClientState { get; private set; } = null!;
-    [PluginService] public static CommandManager CommandManager { get; private set; } = null!;
-    [PluginService] public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
-    [PluginService] public static Framework Framework { get; private set; } = null!;
-    [PluginService] public static GameGui GameGui { get; private set; } = null!;
-    [PluginService] public static GameNetwork GameNetwork { get; private set; } = null!;
-    [PluginService] public static ObjectTable ObjectTable { get; private set; } = null!;
-    [PluginService] public static SigScanner SigScanner { get; private set; } = null!;
-  }
+  [PluginService] public static ClientState ClientState { get; private set; } = null!;
+  [PluginService] public static CommandManager CommandManager { get; private set; } = null!;
+  [PluginService] public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
+  [PluginService] public static Framework Framework { get; private set; } = null!;
+  [PluginService] public static GameGui GameGui { get; private set; } = null!;
+  [PluginService] public static GameNetwork GameNetwork { get; private set; } = null!;
+  [PluginService] public static ObjectTable ObjectTable { get; private set; } = null!;
+  [PluginService] public static SigScanner SigScanner { get; private set; } = null!;
 }

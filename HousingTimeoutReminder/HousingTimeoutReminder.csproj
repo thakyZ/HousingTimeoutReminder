@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>1.0.2.0</Version>
+    <Version>1.0.2.1</Version>
     <Company></Company>
     <Authors>Neko Boi Nick</Authors>
     <Description>
@@ -8,14 +8,14 @@
       "up to 30" and "EVERYTHING" modes supported by the game. Also has (or will have) an option to omit the
       island sanctuary minions from being spawned.
     </Description>
-    <PackageProjectUrl>https://github.com/thakyZ/BetterMinionRoulette-Dalamud</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/thakyZ/HousingTimeoutReminder</PackageProjectUrl>
     <Copyright></Copyright>
     <Title>Housing Timeout Reminder</Title>
   </PropertyGroup>
 
   <PropertyGroup>
     <AssemblyTitle>$(Title)</AssemblyTitle>
-    <AssemblyName>$(Title.Replace(" ", ""))</AssemblyName>
+    <AssemblyName>$(MSBuildProjectName)</AssemblyName>
     <Product>$(Title)</Product>
     <PluginVersion>$(Version)</PluginVersion>
     <FileVersion>$(Version)</FileVersion>
@@ -26,35 +26,35 @@
     <TargetFramework>net7.0-windows</TargetFramework>
     <Platforms>x64</Platforms>
     <Configurations>Release;Debug</Configurations>
-    <Nullable>enable</Nullable>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <LangVersion>latest</LangVersion>
-    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <Nullable>Enable</Nullable>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <LangVersion>Latest</LangVersion>
+    <GenerateDependencyFile>False</GenerateDependencyFile>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
-    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
-    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <RootNamespace>NekoBoiNick.FFXIV.DalamudPlugin.$(Title.Replace(" ", ""))</RootNamespace>
+    <ProduceReferenceAssembly>Talse</ProduceReferenceAssembly>
+    <RestorePackagesWithLockFile>True</RestorePackagesWithLockFile>
+    <CopyLocalLockFileAssemblies>True</CopyLocalLockFileAssemblies>
+    <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
+    <RootNamespace>NekoBoiNick.FFXIV.DalamudPlugin.$(MSBuildProjectName)</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <AssemblyName>$(Title.Replace(" ", ""))</AssemblyName>
+    <AssemblyName>$(AssemblyName)</AssemblyName>
     <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <Optimize>True</Optimize>
+    <OutputPath>$(ProjectDir)bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-    <AssemblyName>$(Title.Replace(" ", ""))2</AssemblyName>
+    <AssemblyName>$(AssemblyName)2</AssemblyName>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>$(AppData)\XIVLauncher\devPlugins\$(Title.Replace(" ", ""))\</OutputPath>
-    <BaseOutputPath>$(AppData)\XIVLauncher\devPlugins\$(Title.Replace(" ", ""))\</BaseOutputPath>
+    <OutputPath>$(DalamudDevPlugins)\$(MSBuildProjectName)</OutputPath>
+    <BaseOutputPath>$(DalamudDevPlugins)\$(MSBuildProjectName)</BaseOutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -99,50 +99,59 @@
     </Reference>
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(Configuration)' == 'Debug' ">
-    <Content Include="HousingTimeoutReminder2.yaml" Link="HousingTimeoutReminder.yaml">
+  <ItemGroup Condition="'$(Configuration)'=='Debug'">
+    <Content Include="HousingTimeoutReminder2.yaml">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
+    <None Remove="HousingTimeoutReminder.yaml"/>
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(Configuration)' == 'Release' ">
-    <Content Include="HousingTimeoutReminder.yaml" Link="HousingTimeoutReminder.yaml">
+  <ItemGroup Condition="'$(Configuration)'=='Release'">
+    <Content Include="HousingTimeoutReminder.yaml">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
+    <None Remove="HousingTimeoutReminder2.yaml"/>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DalamudPackager" Version="2.1.10" />
-    <PackageReference Include="ILRepack" Version="2.0.18" GeneratePathProperty="true" />
-    <PackageReference Include="XivCommon" Version="7.0.0-alpha.1" GeneratePathProperty="true" />
+    <PackageReference Include="DalamudPackager" Version="2.1.11" />
+    <PackageReference Include="ILRepack" Version="2.0.18" GeneratePathProperty="True" />
+    <PackageReference Include="XivCommon" Version="7.0.0-alpha.1" GeneratePathProperty="True" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="bin\**" />
-    <None Remove="bin\**" />
+    <Compile Remove="$(ProjectDir)\bin\**" />
+    <None Remove="$(ProjectDir)\bin\**" />
     <None Include="$(PkgXivCommon)\lib\net7.0-windows7.0\XivCommon.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <Folder Include="images\" />
-    <None Include="..\.github\workflows\build.yml" Link="build.yml" />
-    <Content Include="..\README.md" CopyToOutputDirectory="Never" />
-    <Content Include="..\LICENSE" CopyToOutputDirectory="Never" />
-    <Content Include="..\.gitignore" CopyToOutputDirectory="Never" />
-    <EditorConfigFiles Remove="..\.editorconfig" />
-    <None Include="..\.editorconfig" Link=".editorconfig" />
+    <Folder Include="$(ProjectDir)\images\" />
+    <None Include="$(SolutionDir)\.github\workflows\build.yml" Link="build.yml" />
+    <Content Include="$(SolutionDir)\README.md" CopyToOutputDirectory="Never" />
+    <Content Include="$(SolutionDir)\LICENSE" CopyToOutputDirectory="Never" />
+    <Content Include="$(SolutionDir)\.gitignore" CopyToOutputDirectory="Never" />
+    <EditorConfigFiles Remove="$(SolutionDir)\.editorconfig" />
+    <None Include="$(SolutionDir)\.editorconfig" Link=".editorconfig" />
   </ItemGroup>
 
-  <!--<Target Name="CleanOutDir" AfterTargets="Build">
+  <Target Name="PackagePlugin" AfterTargets="CleanOutDir" Condition="'$(Configuration)'=='Release'">
+    <DalamudPackager ProjectDir="$(ProjectDir)" OutputPath="$(OutputPath)" AssemblyName="$(AssemblyName)" ManifestType="yaml" MakeZip="True" Include="$(AssemblyName).dll;$(AssemblyName).json;$(AssemblyName).pdb" />
+  </Target>
+  <Target Name="PackagePlugin" AfterTargets="PostBuild" Condition="'$(Configuration)'=='Debug'">
+    <DalamudPackager ProjectDir="$(ProjectDir)" OutputPath="$(OutputPath)" AssemblyName="$(AssemblyName)" ManifestType="yaml" MakeZip="False" Include="$(AssemblyName).dll;$(AssemblyName).json;$(AssemblyName).pdb" />
+  </Target>
+
+  <Target Name="CleanOutDir" AfterTargets="Build" Condition="'$(Configuration)'=='Debug'">
     <ItemGroup>
       <DeleteAssemblies Include="$(TargetDir)$(AssemblyName).deps.json" />
     </ItemGroup>
-    <Message Text="Deleting @(DeleteAssemblies)" Importance="high" />
+    <Message Text="ProjectDir = $(ProjectDir)" Importance="High" />
+    <Message Text="Deleting @(DeleteAssemblies)" Importance="High" />
     <Delete Files="@(DeleteAssemblies)" />
     <RemoveDir Directories="$(TargetDir)\ref\" />
-  </Target>-->
+  </Target>
 
-  <!--<Target Name="PostBuild" AfterTargets="CleanOutDir">-->
-  <Target Name="PostBuild" AfterTargets="Build">
+  <Target Name="PostBuild" AfterTargets="CleanOutDir" Condition="'$(Configuration)'=='Debug'">
     <ItemGroup>
       <InputAssemblies Include="$(TargetPath)" />
       <InputAssemblies Include="$(TargetDir)*.dll" Exclude="$(TargetPath)" />

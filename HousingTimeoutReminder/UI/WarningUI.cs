@@ -7,115 +7,111 @@ using FFXIVClientStructs.FFXIV.Common.Math;
 
 using ImGuiNET;
 
-using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder;
+namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.UI;
+public class WarningUI : Window, IDisposable {
+  public static string Name { get => "Housing Timeout Reminder Warning"; }
 
-namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.UI {
-  public class WarningUI : Window, IDisposable {
-    public static string Name { get => "Housing Timeout Reminder Warning"; }
-
-    private const ImGuiWindowFlags WindowFlags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse |
+  private const ImGuiWindowFlags WindowFlags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse |
                                                  ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse |
                                                  ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoMove;
 
-    public WarningUI() : base(Name, WindowFlags) {
-      Size = new Vector2(500, 85) * ImGuiHelpers.GlobalScale;
-      SizeCondition = ImGuiCond.Always;
+  public WarningUI() : base(Name, WindowFlags) {
+    Size = new Vector2(500, 85) * ImGuiHelpers.GlobalScale;
+    SizeCondition = ImGuiCond.Always;
+  }
+
+  public void Dispose() {
+    this.Dispose(true);
+    GC.SuppressFinalize(this);
+  }
+
+  private bool _isDisposed = false;
+
+  protected virtual void Dispose(bool disposing) {
+    if (!_isDisposed && disposing) {
+      this._isDisposed = true;
     }
+  }
 
-    public void Dispose() {
-      this.Dispose(true);
-      GC.SuppressFinalize(this);
+  private Vector2 oldPoistion = Vector2.Zero;
+
+  public void DrawTesting() {
+    Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse |
+            ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse |
+            ImGuiWindowFlags.NoTitleBar;
+    this.BgAlpha = 0.5f;
+    if (!oldPoistion.Equals(ImGui.GetWindowPos())) {
+      Services.Config.WarningPosition = HousingTimeoutReminder.Position.FromVector2(ImGui.GetWindowPos());
+      oldPoistion = ImGui.GetWindowPos();
     }
+  }
 
-    private bool _isDisposed = false;
+  private bool FCDismissed { get => Services.PluginInstance.IsDismissed.Item1; set => Services.PluginInstance.IsDismissed = (value, Services.PluginInstance.IsDismissed.Item2, Services.PluginInstance.IsDismissed.Item3); }
+  private bool PDismissed { get => Services.PluginInstance.IsDismissed.Item2; set => Services.PluginInstance.IsDismissed = (Services.PluginInstance.IsDismissed.Item1, value, Services.PluginInstance.IsDismissed.Item3); }
+  private bool ADismissed { get => Services.PluginInstance.IsDismissed.Item3; set => Services.PluginInstance.IsDismissed = (Services.PluginInstance.IsDismissed.Item1, Services.PluginInstance.IsDismissed.Item2, value); }
 
-    protected virtual void Dispose(bool disposing) {
-      if (!_isDisposed && disposing) {
-        this._isDisposed = true;
+  public void ResetDismissed() {
+    FCDismissed = false;
+    PDismissed = false;
+    ADismissed = false;
+  }
+
+  public bool DrawWarning(uint type, bool state) {
+    if (!state) {
+      return false;
+    }
+    this.BgAlpha = 0.5f;
+    Flags = WindowFlags;
+    Position = HousingTimeoutReminder.Position.ToVector2(Services.Config.WarningPosition);
+    if (type == 0) {
+      var dateTimeOffset = ((DateTimeOffset)DateTime.Now);
+      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(Services.HousingTimer.playerConfiguration.FreeCompanyEstate.LastVisit);
+      var pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
+      ImGui.Text($"Your Free Company Estate has not been visited in, {pastDays} days.");
+      ImGui.Text("You can dismiss this at the button below.");
+      if (ImGui.Button("Dismiss")) {
+        FCDismissed = true;
+      }
+    } else if (type == 1) {
+      var dateTimeOffset = ((DateTimeOffset)DateTime.Now);
+      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(Services.HousingTimer.playerConfiguration.PrivateEstate.LastVisit);
+      var pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
+      ImGui.Text($"Your Private Estate has not been visited in, {pastDays} days.");
+      ImGui.Text("You can dismiss this at the button below.");
+      if (ImGui.Button("Dismiss")) {
+        PDismissed = true;
+      }
+    } else if (type == 2) {
+      var dateTimeOffset = ((DateTimeOffset)DateTime.Now);
+      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(Services.HousingTimer.playerConfiguration.Apartment.LastVisit);
+      var pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
+      ImGui.Text($"Your Apartment has not been visited in, {pastDays} days.");
+      ImGui.Text("You can dismiss this at the button below.");
+      if (ImGui.Button("Dismiss")) {
+        ADismissed = true;
       }
     }
+    return true;
+  }
 
-    private Vector2 oldPoistion = Vector2.Zero;
-
-    public void DrawTesting() {
-      Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse |
-              ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse |
-              ImGuiWindowFlags.NoTitleBar;
-      this.BgAlpha = 0.5f;
-      if (!oldPoistion.Equals(ImGui.GetWindowPos())) {
-        Services.pluginConfig.WarningPosition = HousingTimeoutReminder.Position.FromVector2(ImGui.GetWindowPos());
-        oldPoistion = ImGui.GetWindowPos();
+  public override void Draw() {
+    if ((!Services.PluginInstance.IsLate.Item1 || FCDismissed) && (!Services.PluginInstance.IsLate.Item2 || PDismissed) && (!Services.PluginInstance.IsLate.Item3 || ADismissed)) {
+      this.IsOpen = false;
+    }
+    if (Services.PluginInstance.Testing) {
+      DrawTesting();
+    } else {
+      if (DrawWarning(0, Services.PluginInstance.IsLate.Item1 && !FCDismissed)) {
+        ImGui.End();
+      } else if (DrawWarning(1, Services.PluginInstance.IsLate.Item2 && !PDismissed)) {
+        ImGui.End();
+      } else if (DrawWarning(2, Services.PluginInstance.IsLate.Item3 && !ADismissed)) {
+        ImGui.End();
       }
     }
-
-    private bool FCDismissed { get => Services.plugin.IsDismissed.Item1; set => Services.plugin.IsDismissed = (value, Services.plugin.IsDismissed.Item2, Services.plugin.IsDismissed.Item3); }
-    private bool PDismissed { get => Services.plugin.IsDismissed.Item2; set => Services.plugin.IsDismissed = (Services.plugin.IsDismissed.Item1, value, Services.plugin.IsDismissed.Item3); }
-    private bool ADismissed { get => Services.plugin.IsDismissed.Item3; set => Services.plugin.IsDismissed = (Services.plugin.IsDismissed.Item1, Services.plugin.IsDismissed.Item2, value); }
-
-    public void ResetDismissed() {
-      FCDismissed = false;
-      PDismissed = false;
-      ADismissed = false;
+    if (Position.HasValue) {
+      Position = null;
     }
-
-    public bool DrawWarning(uint type, bool state) {
-      if (!state) {
-        return false;
-      }
-      this.BgAlpha = 0.5f;
-      Flags = WindowFlags;
-      Position = HousingTimeoutReminder.Position.ToVector2(Services.pluginConfig.WarningPosition);
-      if (type == 0) {
-        var dateTimeOffset = ((DateTimeOffset)DateTime.Now);
-        var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.FreeCompanyEstate.LastVisit);
-        var pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
-        ImGui.Text($"Your Free Company Estate has not been visited in, {pastDays} days.");
-        ImGui.Text("You can dismiss this at the button below.");
-        if (ImGui.Button("Dismiss")) {
-          FCDismissed = true;
-        }
-      } else if (type == 1) {
-        var dateTimeOffset = ((DateTimeOffset)DateTime.Now);
-        var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.PrivateEstate.LastVisit);
-        var pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
-        ImGui.Text($"Your Private Estate has not been visited in, {pastDays} days.");
-        ImGui.Text("You can dismiss this at the button below.");
-        if (ImGui.Button("Dismiss")) {
-          PDismissed = true;
-        }
-      } else if (type == 2) {
-        var dateTimeOffset = ((DateTimeOffset)DateTime.Now);
-        var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(Services.housingTimer.playerConfiguration.Apartment.LastVisit);
-        var pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
-        ImGui.Text($"Your Apartment has not been visited in, {pastDays} days.");
-        ImGui.Text("You can dismiss this at the button below.");
-        if (ImGui.Button("Dismiss")) {
-          ADismissed = true;
-        }
-      }
-      return true;
-    }
-
-    public override void Draw() {
-      if ((!Services.plugin.IsLate.Item1 || FCDismissed) && (!Services.plugin.IsLate.Item2 || PDismissed) && (!Services.plugin.IsLate.Item3 || ADismissed)) {
-        this.IsOpen = false;
-      }
-      if (Services.plugin.Testing) {
-        DrawTesting();
-      } else {
-        if (DrawWarning(0, Services.plugin.IsLate.Item1 && !FCDismissed)) {
-          ImGui.End();
-        } else if (DrawWarning(1, Services.plugin.IsLate.Item2 && !PDismissed)) {
-          ImGui.End();
-        } else if (DrawWarning(2, Services.plugin.IsLate.Item3 && !ADismissed)) {
-          ImGui.End();
-        }
-      }
-      if (Position.HasValue)
-      {
-          Position = null;
-      }
-      ImGui.End();
-    }
+    ImGui.End();
   }
 }

@@ -73,6 +73,7 @@ dotnet_style_prefer_simplified_boolean_expressions = true:suggestion
 dotnet_style_prefer_compound_assignment = true:suggestion
 dotnet_style_prefer_simplified_interpolation = true:suggestion
 dotnet_diagnostic.CA2227.severity = silent
+dotnet_style_namespace_match_folder = true:suggestion
 ###############################
 # C# Coding Conventions       #
 ###############################
@@ -82,7 +83,7 @@ csharp_style_var_for_built_in_types = true:silent
 csharp_style_var_when_type_is_apparent = true:silent
 csharp_style_var_elsewhere = true:silent
 # Expression-bodied members
-csharp_style_expression_bodied_methods = false
+csharp_style_expression_bodied_methods = false:silent
 csharp_style_expression_bodied_constructors = false:silent
 csharp_style_expression_bodied_operators = false:silent
 csharp_style_expression_bodied_properties = true:silent
@@ -134,7 +135,7 @@ csharp_preserve_single_line_statements = true
 csharp_preserve_single_line_blocks = true
 csharp_using_directive_placement = outside_namespace:suggestion
 csharp_prefer_simple_using_statement = false:suggestion
-csharp_style_namespace_declarations = block_scoped:silent
+csharp_style_namespace_declarations = file_scoped:silent
 csharp_style_expression_bodied_lambdas = when_on_single_line:suggestion
 csharp_style_expression_bodied_local_functions = when_on_single_line:suggestion
 csharp_indent_case_contents_when_block = true
@@ -177,6 +178,13 @@ dotnet_diagnostic.CA1822.severity = none
 
 # S1075: URIs should not be hardcoded
 dotnet_diagnostic.S1075.severity = none
+csharp_style_prefer_method_group_conversion = true:silent
+csharp_style_prefer_top_level_statements = true:silent
+csharp_style_prefer_null_check_over_type_check = true:suggestion
+csharp_style_prefer_local_over_anonymous_function = true:suggestion
+csharp_style_prefer_index_operator = false:suggestion
+csharp_style_prefer_range_operator = false:suggestion
+csharp_style_implicit_object_creation_when_type_is_apparent = true:suggestion
 
 [*.vb]
 # Modifier preferences

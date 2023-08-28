@@ -23,7 +23,12 @@ public class HousingTimer {
   }
 
   public void Unload() {
-    Configuration.GetPlayerConfiguration()!.Update(playerConfiguration);
+    var playerConfig = Configuration.GetPlayerConfiguration();
+    if (playerConfig == null || playerConfig is null) {
+      PluginLog.Information($"isNull: {playerConfig == null || playerConfig is null}");
+    } else {
+      playerConfig!.Update(playerConfiguration);
+    }
   }
 
   public bool CheckTime(int type) {

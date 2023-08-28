@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>1.0.2.1</Version>
+    <Version>1.0.2.2</Version>
     <Company></Company>
     <Authors>Neko Boi Nick</Authors>
     <Description>
@@ -103,20 +103,20 @@
     <Content Include="HousingTimeoutReminder2.yaml">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <None Remove="HousingTimeoutReminder.yaml"/>
+    <None Remove="HousingTimeoutReminder.yaml" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)'=='Release'">
     <Content Include="HousingTimeoutReminder.yaml">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <None Remove="HousingTimeoutReminder2.yaml"/>
+    <None Remove="HousingTimeoutReminder2.yaml" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="DalamudPackager" Version="2.1.11" />
     <PackageReference Include="ILRepack" Version="2.0.18" GeneratePathProperty="True" />
-    <PackageReference Include="XivCommon" Version="7.0.0-alpha.1" GeneratePathProperty="True" />
+    <PackageReference Include="XivCommon" Version="7.0.2" GeneratePathProperty="True" />
   </ItemGroup>
 
   <ItemGroup>

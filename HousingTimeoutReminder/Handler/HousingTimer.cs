@@ -2,8 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-using Dalamud.Logging;
-
 using XivCommon.Functions.Housing;
 
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler;
@@ -25,7 +23,7 @@ public class HousingTimer {
   public void Unload() {
     var playerConfig = Configuration.GetPlayerConfiguration();
     if (playerConfig == null || playerConfig is null) {
-      PluginLog.Information($"isNull: {playerConfig == null || playerConfig is null}");
+      Services.Log.Information($"isNull: {playerConfig == null || playerConfig is null}");
     } else {
       playerConfig!.Update(playerConfiguration);
     }
@@ -98,7 +96,7 @@ public class HousingTimer {
   /// </summary>
   /// <return>Returns delayed bool until function is not <see langword="null"/>.</return>
   public async Task<bool> TestFunctionsNotNullAsync() {
-    while (Services.PluginInstance.XivCommon.Functions.Housing.Location is null) {
+    while (Services.XivCommon.Functions.Housing.Location is null) {
       await Task.Delay(10);
     }
     await Task.Delay(2000);
@@ -115,8 +113,8 @@ public class HousingTimer {
   /// <param name="territory">The ID for the territory the player is in.</param>
   /// <return>Returns <see langword="true"/> if successful.</return>
   public bool CheckLocation(ushort territory) {
-    if (Services.PluginInstance.XivCommon.Functions.Housing.Location is not null) {
-      HousingLocation loc = Services.PluginInstance.XivCommon.Functions.Housing.Location;
+    if (Services.XivCommon.Functions.Housing.Location is not null) {
+      HousingLocation loc = Services.XivCommon.Functions.Housing.Location;
       if (IsApartment(territory) && playerConfiguration.Apartment.Enabled) {
         ushort apartmentNumber = loc.Apartment ?? 0;
         bool apartmentWing = loc.ApartmentWing != 1;
@@ -147,7 +145,7 @@ public class HousingTimer {
         }
       }
     }
-    Services.PluginInstance.IsLate = CheckTime();
+    Services.Instance.IsLate = CheckTime();
     return true;
   }
 
@@ -168,8 +166,8 @@ public class HousingTimer {
       var _taskContinue = _task.ContinueWith((value) => value.Result && CheckLocation(Services.ClientState.TerritoryType));
       _taskComplete = await _taskContinue.WaitAsync(cts.Token);
     } catch (Exception ex) when (ex is OperationCanceledException) {
-      PluginLog.Error("Errored when waiting for task to complete.");
-      PluginLog.Error(ex.Message);
+      Services.Log.Error("Errored when waiting for task to complete.");
+      Services.Log.Error(ex.Message);
       return false;
     }
     return _taskComplete;
@@ -188,7 +186,7 @@ public class HousingTimer {
       return;
     }
 
-    _singletons += 1;
+    _singletons++;
 
     while (_isSaving) {
       await Task.Delay(2000);
@@ -198,7 +196,7 @@ public class HousingTimer {
     Services.Config.Save();
     await Task.Delay(2000);
     _isSaving = false;
-    _singletons -= 1;
+    _singletons--;
 
     return;
   }

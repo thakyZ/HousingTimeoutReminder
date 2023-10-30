@@ -6,6 +6,8 @@ root = true
 # All files
 [*]
 indent_style = space
+vsspell_section_id = 360e4acc06494fe1ad19b0feb60c1dcb
+vsspell_exclusion_expressions_360e4acc06494fe1ad19b0feb60c1dcb = (?<=Game)(?:Interop)(?=Provider)(?@@PND@@/Options/None)
 
 # XML project files
 [*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj}]

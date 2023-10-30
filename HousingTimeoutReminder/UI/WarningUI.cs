@@ -1,6 +1,6 @@
 ﻿using System;
 
-using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 
 using FFXIVClientStructs.FFXIV.Common.Math;
@@ -46,9 +46,9 @@ public class WarningUI : Window, IDisposable {
     }
   }
 
-  private bool FCDismissed { get => Services.PluginInstance.IsDismissed.Item1; set => Services.PluginInstance.IsDismissed = (value, Services.PluginInstance.IsDismissed.Item2, Services.PluginInstance.IsDismissed.Item3); }
-  private bool PDismissed { get => Services.PluginInstance.IsDismissed.Item2; set => Services.PluginInstance.IsDismissed = (Services.PluginInstance.IsDismissed.Item1, value, Services.PluginInstance.IsDismissed.Item3); }
-  private bool ADismissed { get => Services.PluginInstance.IsDismissed.Item3; set => Services.PluginInstance.IsDismissed = (Services.PluginInstance.IsDismissed.Item1, Services.PluginInstance.IsDismissed.Item2, value); }
+  private bool FCDismissed { get => Services.Instance.IsDismissed.Item1; set => Services.Instance.IsDismissed = (value, Services.Instance.IsDismissed.Item2, Services.Instance.IsDismissed.Item3); }
+  private bool PDismissed { get => Services.Instance.IsDismissed.Item2; set => Services.Instance.IsDismissed = (Services.Instance.IsDismissed.Item1, value, Services.Instance.IsDismissed.Item3); }
+  private bool ADismissed { get => Services.Instance.IsDismissed.Item3; set => Services.Instance.IsDismissed = (Services.Instance.IsDismissed.Item1, Services.Instance.IsDismissed.Item2, value); }
 
   public void ResetDismissed() {
     FCDismissed = false;
@@ -95,17 +95,17 @@ public class WarningUI : Window, IDisposable {
   }
 
   public override void Draw() {
-    if ((!Services.PluginInstance.IsLate.Item1 || FCDismissed) && (!Services.PluginInstance.IsLate.Item2 || PDismissed) && (!Services.PluginInstance.IsLate.Item3 || ADismissed)) {
+    if ((!Services.Instance.IsLate.Item1 || FCDismissed) && (!Services.Instance.IsLate.Item2 || PDismissed) && (!Services.Instance.IsLate.Item3 || ADismissed)) {
       this.IsOpen = false;
     }
-    if (Services.PluginInstance.Testing) {
+    if (Services.Instance.Testing) {
       DrawTesting();
     } else {
-      if (DrawWarning(0, Services.PluginInstance.IsLate.Item1 && !FCDismissed)) {
+      if (DrawWarning(0, Services.Instance.IsLate.Item1 && !FCDismissed)) {
         ImGui.End();
-      } else if (DrawWarning(1, Services.PluginInstance.IsLate.Item2 && !PDismissed)) {
+      } else if (DrawWarning(1, Services.Instance.IsLate.Item2 && !PDismissed)) {
         ImGui.End();
-      } else if (DrawWarning(2, Services.PluginInstance.IsLate.Item3 && !ADismissed)) {
+      } else if (DrawWarning(2, Services.Instance.IsLate.Item3 && !ADismissed)) {
         ImGui.End();
       }
     }

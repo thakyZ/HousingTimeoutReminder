@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using Dalamud.Configuration;
 using Dalamud.Plugin;
 
-using Newtonsoft.Json;
-
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder;
 /// <summary>
 /// The main plugin configuration file.
@@ -33,25 +31,17 @@ public class Configuration : IPluginConfiguration {
   public Position WarningPosition { get; set; } = new Position();
 
   /// <summary>
-  /// An instanced version of the <see cref="DalamudPluginInterface"/>.
-  /// </summary>
-  [JsonIgnore]
-  private DalamudPluginInterface pluginInterface { get; set; } = null!;
-
-  /// <summary>
   /// Gets the current player config that exists.
   /// </summary>
   public static PerPlayerConfiguration? GetPlayerConfiguration() {
-    return Services.Config.PlayerConfigs.Find(x => x.OwnerName == Plugin.GetCurrentPlayerName());
+    return Services.Config.PlayerConfigs.Find(x => x.OwnerName == Services.ClientState.LocalPlayer?.Name.TextValue);
   }
 
   /// <summary>
   /// Initializes the plugin config.
   /// </summary>
   /// <param name="pluginInterface">An instanced version of the <see cref="DalamudPluginInterface"/>.</param>
-  public void Initialize(DalamudPluginInterface pluginInterface) {
-    this.pluginInterface = pluginInterface;
-
+  public void Initialize() {
     if (DaysToWait > 30) {
       DaysToWait = 30;
     }
@@ -68,6 +58,6 @@ public class Configuration : IPluginConfiguration {
   /// Saves the plugin config via the instanced <see cref="DalamudPluginInterface"/>.
   /// </summary>
   public void Save() {
-    this.pluginInterface.SavePluginConfig(this);
+    Services.PluginInterface.SavePluginConfig(this);
   }
 }

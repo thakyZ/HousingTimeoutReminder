@@ -2,13 +2,8 @@
 using System.Linq;
 
 using Dalamud.Game.Command;
-using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
-
-using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.UI;
-
-using XivCommon;
 
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder;
 /// <summary>
@@ -18,32 +13,14 @@ public class Plugin : IDalamudPlugin {
   /// <summary>
   /// The name of the plugin.
   /// </summary>
-  private static string name = "Housing Timeout Reminder";
+  internal static string StaticName = "Housing Timeout Reminder";
 
-  public string Name => name;
+  public string Name => StaticName;
 
   /// <summary>
   /// The plugin's main command name.
   /// </summary>
   private const string CommandName = "/htimeout";
-
-  /// <summary>
-  /// The window system of the plugin.
-  /// </summary>
-  public WindowSystem WindowSystem = new(name.Replace(" ",String.Empty));
-  /// <summary>
-  /// The ui for warning the player that their house hasn't been visited in a while.
-  /// </summary>
-  public WarningUI WarningUI = new();
-  /// <summary>
-  /// The ui for settings of the plugin.
-  /// </summary>
-  public SettingsUI SettingsUI = new();
-
-  /// <summary>
-  /// XIVCommon base instance that allows you to get the housing district location.
-  /// </summary>
-  internal XivCommonBase XivCommon;
 
   /// <summary>
   /// Bool to test if repositioning the warning dialog.
@@ -71,17 +48,7 @@ public class Plugin : IDalamudPlugin {
   /// </summary>
   /// <param name="pluginInterface">Argument passed by Dalamud</param>
   public Plugin([RequiredVersion("1.0")] DalamudPluginInterface pluginInterface) {
-    pluginInterface.Create<Services>();
-
-    Services.PluginInstance = this;
-
-    Services.Config = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-    Services.Config.Initialize(Services.PluginInterface);
-    XivCommon = new XivCommonBase(Hooks.None);
-
-    Services.HousingTimer = new();
-    WindowSystem.AddWindow(SettingsUI);
-    WindowSystem.AddWindow(WarningUI);
+    Services.Init(pluginInterface, this);
 
     Services.CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand) {
       HelpMessage = "The config menu for the housing timer reminder plugin."
@@ -93,9 +60,9 @@ public class Plugin : IDalamudPlugin {
     Services.ClientState.Login += ClientState_Login;
     Services.ClientState.Logout += ClientState_Logout;
     if (Services.ClientState.IsLoggedIn) {
-      ClientState_Login(this, EventArgs.Empty);
+      ClientState_Login();
     }
-    ClientState_TerritoryChanged(null, Services.ClientState.TerritoryType);
+    ClientState_TerritoryChanged(Services.ClientState.TerritoryType);
   }
 
   /// <summary>
@@ -117,10 +84,10 @@ public class Plugin : IDalamudPlugin {
   /// <param name="disposing">Affirms your intention to dispose.</param>
   protected virtual void Dispose(bool disposing) {
     if (!_isDisposed && disposing) {
-      WindowSystem.RemoveAllWindows();
-      WarningUI.Dispose();
-      SettingsUI.Dispose();
-      XivCommon.Dispose();
+      Services.WindowSystem.RemoveAllWindows();
+      Services.WarningUI.Dispose();
+      Services.SettingsUI.Dispose();
+      Services.XivCommon.Dispose();
       Services.PluginInterface.UiBuilder.Draw -= DrawUI;
       Services.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
       Services.ClientState.TerritoryChanged -= ClientState_TerritoryChanged;
@@ -152,8 +119,8 @@ public class Plugin : IDalamudPlugin {
     Services.HousingTimer.ManualCheckAsync().ContinueWith((task) => {
       var check = CheckDisabled();
       if ((IsLate.Item1 && !IsDismissed.Item1 && check.Item1) || (IsLate.Item3 && !IsDismissed.Item3 && check.Item2) || (IsLate.Item3 && !IsDismissed.Item3 && check.Item3)) {
-        WarningUI.ResetDismissed();
-        WarningUI.IsOpen = true;
+        Services.WarningUI.ResetDismissed();
+        Services.WarningUI.IsOpen = true;
       }
     });
   }
@@ -163,7 +130,7 @@ public class Plugin : IDalamudPlugin {
   /// </summary>
   /// <param name="sender">The object instance of the sender.</param>
   /// <param name="e">The territory ID as a ushort.</param>
-  private void ClientState_TerritoryChanged(object? sender, ushort e) {
+  private void ClientState_TerritoryChanged(ushort e) {
     Services.HousingTimer.OnTerritoryChanged(e);
     CheckTimers();
   }
@@ -175,14 +142,14 @@ public class Plugin : IDalamudPlugin {
   /// </summary>
   /// <param name="sender">The object instance of the sender.</param>
   /// <param name="e">Random unneeded event args.</param>
-  private void ClientState_Login(object? sender, EventArgs e) {
-    var playerConfig = Services.Config.PlayerConfigs.Find(x => x.OwnerName == GetCurrentPlayerName()) ?? new PerPlayerConfiguration() { OwnerName = "Unknown" };
-    if (playerConfig.OwnerName == "Unknown" && GetCurrentPlayerName() is not null) {
+  private void ClientState_Login() {
+    var playerConfig = Services.Config.PlayerConfigs.Find(x => x.OwnerName == Services.ClientState.LocalPlayer?.Name.TextValue) ?? new PerPlayerConfiguration() { OwnerName = "Unknown" };
+    if (playerConfig.OwnerName == "Unknown" && Services.ClientState.LocalPlayer?.Name.TextValue is not null) {
       Services.Config.PlayerConfigs.Add(new PerPlayerConfiguration() {
-        OwnerName = GetCurrentPlayerName()!
+        OwnerName = Services.ClientState.LocalPlayer?.Name.TextValue!
       });
     }
-    if (GetCurrentPlayerName() is not null) {
+    if (Services.ClientState.LocalPlayer?.Name.TextValue is not null) {
       Services.HousingTimer.Load();
     }
   }
@@ -193,7 +160,7 @@ public class Plugin : IDalamudPlugin {
   /// </summary>
   /// <param name="sender">The object instance of the sender.</param>
   /// <param name="e">Random unneeded event args.</param>
-  private void ClientState_Logout(object? sender, EventArgs e) {
+  private void ClientState_Logout() {
     Services.HousingTimer.Unload();
   }
 
@@ -207,7 +174,7 @@ public class Plugin : IDalamudPlugin {
     if (argsParsed.Equals("check")) {
       CheckTimers();
     } else {
-      SettingsUI.IsOpen ^= true;
+      Services.SettingsUI.IsOpen ^= true;
     }
   }
 
@@ -215,9 +182,9 @@ public class Plugin : IDalamudPlugin {
   /// Draws the UI of the plugin.
   /// </summary>
   private void DrawUI() {
-    WindowSystem.Draw();
+    Services.WindowSystem.Draw();
     if (Testing) {
-      WarningUI.IsOpen = true;
+      Services.WarningUI.IsOpen = true;
     }
   }
 
@@ -225,18 +192,6 @@ public class Plugin : IDalamudPlugin {
   /// Draws the UI of the settings menu of the plugin.
   /// </summary>
   public void DrawConfigUI() {
-    SettingsUI.IsOpen = true;
-  }
-
-  /// <summary>
-  /// Gets the current player name of the client.
-  /// </summary>
-  /// <returns>The current player name.</returns>
-  public static string? GetCurrentPlayerName() {
-    if (Services.ClientState == null || Services.ClientState.LocalPlayer == null || Services.ClientState.LocalPlayer.Name == null) {
-      return null;
-    }
-
-    return Services.ClientState.LocalPlayer.Name.TextValue;
+    Services.SettingsUI.IsOpen = true;
   }
 }

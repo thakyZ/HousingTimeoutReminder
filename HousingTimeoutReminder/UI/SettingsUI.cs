@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 
 using FFXIVClientStructs.FFXIV.Common.Math;
@@ -330,16 +330,16 @@ public class SettingsUI : Window, IDisposable {
     ImGui.SameLine();
     ImGui.Text("Test");
     ImGui.SameLine();
-    var isTesting = Services.PluginInstance.Testing;
+    var isTesting = Services.Instance.Testing;
     if (ImGui.Checkbox("##isTesting", ref isTesting)) {
-      Services.PluginInstance.Testing = isTesting;
+      Services.Instance.Testing = isTesting;
     }
     ImGui.SameLine();
     ImGui.Separator();
     ImGui.SameLine();
     if (ImGui.Button("Reset")) {
-      Services.PluginInstance.CheckTimers();
-      Services.PluginInstance.IsDismissed = (false, false, false);
+      Services.Instance.CheckTimers();
+      Services.Instance.IsDismissed = (false, false, false);
     }
 
     ImGui.End();

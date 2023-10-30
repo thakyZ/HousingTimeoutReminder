@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>1.0.2.2</Version>
+    <Version>1.0.2.3</Version>
     <Company></Company>
     <Authors>Neko Boi Nick</Authors>
     <Description>
@@ -114,9 +114,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DalamudPackager" Version="2.1.11" />
+    <PackageReference Include="DalamudPackager" Version="2.1.12" />
     <PackageReference Include="ILRepack" Version="2.0.18" GeneratePathProperty="True" />
-    <PackageReference Include="XivCommon" Version="7.0.2" GeneratePathProperty="True" />
+    <PackageReference Include="XivCommon" Version="9.0.0" GeneratePathProperty="True" />
   </ItemGroup>
 
   <ItemGroup>

@@ -8,6 +8,6 @@ repo_url: https://github.com/thakyZ/HousingTimeoutReminder
 applicable_version: any
 tags:
   - Utility
-dalamud_api_level: 8
+dalamud_api_level: 9
 icon_url: https://raw.githubusercontent.com/thakyZ/MyDalamudPlugins/main/plugins/HousingTimeoutReminder/images/icon.png
 changelog: Fixed uncaught exception when saving.

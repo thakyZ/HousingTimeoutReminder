@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>1.0.2.3</Version>
+    <Version>1.0.2.4</Version>
     <Company></Company>
     <Authors>Neko Boi Nick</Authors>
     <Description>

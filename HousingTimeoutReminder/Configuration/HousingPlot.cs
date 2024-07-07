@@ -9,7 +9,7 @@ public class HousingPlot : WardProperty {
   /// <summary>
   /// The specific plot the house is on.
   /// </summary>
-  public ushort Plot { get; set; }
+  public int Plot { get; set; }
 
   public override bool IsValid() { return !District.Equals(District.Unknown) && (Ward > 0) && (Plot > 0); }
 }

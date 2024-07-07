@@ -25,7 +25,7 @@ public class WardProperty : IWardProperty {
   /// <summary>
   /// The specific ward the property is in.
   /// </summary>
-  public ushort Ward { get; set; }
+  public int Ward { get; set; }
   /// <summary>
   /// Checks if this property is valid.
   /// </summary>

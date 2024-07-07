@@ -12,8 +12,8 @@ public class WarningUI : Window, IDisposable {
   public static string Name { get => "Housing Timeout Reminder Warning"; }
 
   private const ImGuiWindowFlags WindowFlags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse |
-                                                 ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse |
-                                                 ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoMove;
+                                               ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse |
+                                               ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoMove;
 
   public WarningUI() : base(Name, WindowFlags) {
     Size = new Vector2(500, 85) * ImGuiHelpers.GlobalScale;
@@ -33,16 +33,16 @@ public class WarningUI : Window, IDisposable {
     }
   }
 
-  private Vector2 oldPoistion = Vector2.Zero;
+  private Vector2 oldPostion = Vector2.Zero;
 
   public void DrawTesting() {
     Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse |
             ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse |
             ImGuiWindowFlags.NoTitleBar;
     this.BgAlpha = 0.5f;
-    if (!oldPoistion.Equals(ImGui.GetWindowPos())) {
+    if (!oldPostion.Equals(ImGui.GetWindowPos())) {
       Services.Config.WarningPosition = HousingTimeoutReminder.Position.FromVector2(ImGui.GetWindowPos());
-      oldPoistion = ImGui.GetWindowPos();
+      oldPostion = ImGui.GetWindowPos();
     }
   }
 
@@ -64,7 +64,7 @@ public class WarningUI : Window, IDisposable {
     Flags = WindowFlags;
     Position = HousingTimeoutReminder.Position.ToVector2(Services.Config.WarningPosition);
     if (type == 0) {
-      var dateTimeOffset = ((DateTimeOffset)DateTime.Now);
+      var dateTimeOffset = (DateTimeOffset)DateTime.Now;
       var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(Services.HousingTimer.playerConfiguration.FreeCompanyEstate.LastVisit);
       var pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
       ImGui.Text($"Your Free Company Estate has not been visited in, {pastDays} days.");
@@ -73,7 +73,7 @@ public class WarningUI : Window, IDisposable {
         FCDismissed = true;
       }
     } else if (type == 1) {
-      var dateTimeOffset = ((DateTimeOffset)DateTime.Now);
+      var dateTimeOffset = (DateTimeOffset)DateTime.Now;
       var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(Services.HousingTimer.playerConfiguration.PrivateEstate.LastVisit);
       var pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
       ImGui.Text($"Your Private Estate has not been visited in, {pastDays} days.");
@@ -82,7 +82,7 @@ public class WarningUI : Window, IDisposable {
         PDismissed = true;
       }
     } else if (type == 2) {
-      var dateTimeOffset = ((DateTimeOffset)DateTime.Now);
+      var dateTimeOffset = (DateTimeOffset)DateTime.Now;
       var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(Services.HousingTimer.playerConfiguration.Apartment.LastVisit);
       var pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
       ImGui.Text($"Your Apartment has not been visited in, {pastDays} days.");
@@ -102,16 +102,12 @@ public class WarningUI : Window, IDisposable {
       DrawTesting();
     } else {
       if (DrawWarning(0, Services.Instance.IsLate.Item1 && !FCDismissed)) {
-        ImGui.End();
       } else if (DrawWarning(1, Services.Instance.IsLate.Item2 && !PDismissed)) {
-        ImGui.End();
       } else if (DrawWarning(2, Services.Instance.IsLate.Item3 && !ADismissed)) {
-        ImGui.End();
       }
     }
     if (Position.HasValue) {
       Position = null;
     }
-    ImGui.End();
   }
 }

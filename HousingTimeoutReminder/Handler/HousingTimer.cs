@@ -2,8 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-using XivCommon.Functions.Housing;
-
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler;
 public class HousingTimer {
   public PerPlayerConfiguration playerConfiguration { get; set; }
@@ -64,18 +62,6 @@ public class HousingTimer {
   }
 
   /// <summary>
-  /// Gets if the player is in an Apartment per the <paramref name="territory"/> id.
-  /// </summary>
-  /// <param name="territory">The ID for the territory the player is in.</param>
-  /// <return>If the player is in an Apartment</return>
-  public bool IsApartment(ushort territory) {
-    return territory switch {
-      610 or 608 or 609 or 999 or 655 => true,
-      _ => false,
-    };
-  }
-
-  /// <summary>
   /// Convert the <paramref name="territory"/> to the <see cref="District"/>
   /// </summary>
   /// <param name="territory">The ID for the territory the player is in.</param>
@@ -96,7 +82,7 @@ public class HousingTimer {
   /// </summary>
   /// <return>Returns delayed bool until function is not <see langword="null"/>.</return>
   public async Task<bool> TestFunctionsNotNullAsync() {
-    while (Services.XivCommon.Functions.Housing.Location is null) {
+    while (ConvertToDistrict(Services.ClientState.TerritoryType) == District.Unknown) {
       await Task.Delay(10);
     }
     await Task.Delay(2000);
@@ -112,37 +98,35 @@ public class HousingTimer {
   /// </summary>
   /// <param name="territory">The ID for the territory the player is in.</param>
   /// <return>Returns <see langword="true"/> if successful.</return>
-  public bool CheckLocation(ushort territory) {
-    if (Services.XivCommon.Functions.Housing.Location is not null) {
-      HousingLocation loc = Services.XivCommon.Functions.Housing.Location;
-      if (IsApartment(territory) && playerConfiguration.Apartment.Enabled) {
-        ushort apartmentNumber = loc.Apartment ?? 0;
-        bool apartmentWing = loc.ApartmentWing != 1;
-        if (apartmentNumber == playerConfiguration.Apartment.ApartmentNumber
-          && apartmentWing == playerConfiguration.Apartment.Subdistrict
-          && loc.Ward == playerConfiguration.Apartment.Ward
-          && ConvertToDistrict(territory) == playerConfiguration.Apartment.District && CheckTime(2)) {
-          playerConfiguration.Apartment.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
-          Update();
-          return true;
-        }
-      } else {
-        ushort plot = loc.Plot ?? 0;
-        if (playerConfiguration.PrivateEstate.Enabled
-          && plot == playerConfiguration.PrivateEstate.Plot
-          && loc.Ward == playerConfiguration.PrivateEstate.Ward
-          && ConvertToDistrict(territory) == playerConfiguration.PrivateEstate.District && CheckTime(1)) {
-          playerConfiguration.PrivateEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
-          Update();
-          return true;
-        } else if (playerConfiguration.FreeCompanyEstate.Enabled
-          && plot == playerConfiguration.FreeCompanyEstate.Plot
-          && loc.Ward == playerConfiguration.FreeCompanyEstate.Ward
-          && ConvertToDistrict(territory) == playerConfiguration.FreeCompanyEstate.District && CheckTime(0)) {
-          playerConfiguration.FreeCompanyEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
-          Update();
-          return true;
-        }
+  public unsafe bool CheckLocation(ushort territory) {
+    var loc = HousingManager.GetCurrentLoc();
+    if (loc.IsApartment && playerConfiguration.Apartment.Enabled) {
+      int apartmentNumber = loc.Room;
+      bool apartmentWing = loc.ApartmentWing != 1;
+      if (apartmentNumber == playerConfiguration.Apartment.ApartmentNumber
+        && apartmentWing == playerConfiguration.Apartment.Subdistrict
+        && loc.Ward == playerConfiguration.Apartment.Ward
+        && ConvertToDistrict(territory) == playerConfiguration.Apartment.District && CheckTime(2)) {
+        playerConfiguration.Apartment.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
+        Update();
+        return true;
+      }
+    } else if (!loc.IsApartment) {
+      int plot = loc.Plot;
+      if (playerConfiguration.PrivateEstate.Enabled
+        && plot == playerConfiguration.PrivateEstate.Plot
+        && loc.Ward == playerConfiguration.PrivateEstate.Ward
+        && ConvertToDistrict(territory) == playerConfiguration.PrivateEstate.District && CheckTime(1)) {
+        playerConfiguration.PrivateEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
+        Update();
+        return true;
+      } else if (playerConfiguration.FreeCompanyEstate.Enabled
+        && plot == playerConfiguration.FreeCompanyEstate.Plot
+        && loc.Ward == playerConfiguration.FreeCompanyEstate.Ward
+        && ConvertToDistrict(territory) == playerConfiguration.FreeCompanyEstate.District && CheckTime(0)) {
+        playerConfiguration.FreeCompanyEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
+        Update();
+        return true;
       }
     }
     Services.Instance.IsLate = CheckTime();
@@ -152,10 +136,9 @@ public class HousingTimer {
   /// <summary>
   /// The function to call when changing instance. Checks timers after.
   /// </summary>
-  /// <param name="sender">The object instance of the sender.</param>
   /// <param name="e">The territory ID as a ushort.</param>
   public void OnTerritoryChanged(ushort e) {
-    Task.Run(async () => await TestFunctionsNotNullAsync()).ContinueWith((t) => CheckLocation(e));
+    Task.Run(async () => await TestFunctionsNotNullAsync()).ContinueWith((t) => { if (t.Result) CheckLocation(e); });
   }
 
   public async Task<bool> ManualCheckAsync() {

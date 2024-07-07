@@ -18,19 +18,19 @@ public class Position {
   public float Y { get; set; } = 0;
 
   /// <summary>
-  /// Converts the <see cref="Vector2"/> to a <see cref="Poisition"/> class.
+  /// Converts the <see cref="Vector2"/> to a <see cref="Position"/> class.
   /// </summary>
   /// <param name="vector">The <see cref="Vector2"/> to convert.</param>
-  /// <returns>Returns <see cref="Poisition"/> from <see cref="Vector2"/>.</returns>
+  /// <returns>Returns <see cref="Position"/> from <see cref="Vector2"/>.</returns>
   public static Position FromVector2(Vector2 vector) {
     return new Position() { X = vector.X, Y = vector.Y };
   }
 
   /// <summary>
-  /// Converts the <see cref="Poisition"/> to a <see cref="Vector2"/> class.
+  /// Converts the <see cref="Position"/> to a <see cref="Vector2"/> class.
   /// </summary>
-  /// <param name="position">The <see cref="Poisition"/> to convert.</param>
-  /// <returns>Returns <see cref="Vector2"/> from <see cref="Poisition"/>.</returns>
+  /// <param name="position">The <see cref="Position"/> to convert.</param>
+  /// <returns>Returns <see cref="Vector2"/> from <see cref="Position"/>.</returns>
   public static Vector2 ToVector2(Position position) {
     return new(position.X, position.Y);
   }

@@ -18,7 +18,7 @@ public class Configuration : IPluginConfiguration {
   /// <summary>
   /// The list of player configs.
   /// </summary>
-  public List<PerPlayerConfiguration> PlayerConfigs { get; set; } = new();
+  public List<PerPlayerConfiguration> PlayerConfigs { get; set; } = [];
 
   /// <summary>
   /// The default days to wait for when to notify the player that they haven't visited their property for some time.
@@ -40,7 +40,6 @@ public class Configuration : IPluginConfiguration {
   /// <summary>
   /// Initializes the plugin config.
   /// </summary>
-  /// <param name="pluginInterface">An instanced version of the <see cref="DalamudPluginInterface"/>.</param>
   public void Initialize() {
     if (DaysToWait > 30) {
       DaysToWait = 30;

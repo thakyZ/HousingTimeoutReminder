@@ -9,8 +9,6 @@ using Dalamud.Plugin.Services;
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler;
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.UI;
 
-using XivCommon;
-
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder;
 internal class Services {
   [NotNull, AllowNull]
@@ -19,11 +17,6 @@ internal class Services {
   internal static Configuration Config { get; private set; }
   [NotNull, AllowNull]
   internal static HousingTimer HousingTimer { get; private set; }
-  /// <summary>
-  /// XIVCommon base instance that allows you to get the housing district location.
-  /// </summary>
-  [NotNull, AllowNull]
-  internal static XivCommonBase XivCommon { get; private set; }
   /// <summary>
   /// The window system of the plugin.
   /// </summary>
@@ -39,6 +32,11 @@ internal class Services {
   /// </summary>
   [NotNull, AllowNull]
   public static SettingsUI SettingsUI { get; } = new();
+  /// <summary>
+  /// The ui for debug window of the plugin.
+  /// </summary>
+  [NotNull, AllowNull]
+  public static DebugUI DebugUI { get; } = new();
 
   [PluginService]
   [NotNull, AllowNull]
@@ -48,7 +46,7 @@ internal class Services {
   public static ICommandManager CommandManager { get; private set; }
   [PluginService]
   [NotNull, AllowNull]
-  public static DalamudPluginInterface PluginInterface { get; private set; }
+  public static IDalamudPluginInterface PluginInterface { get; private set; }
   [PluginService]
   [NotNull, AllowNull]
   public static IFramework Framework { get; private set; }
@@ -71,14 +69,16 @@ internal class Services {
   [NotNull, AllowNull]
   public static IGameInteropProvider GameInteropProvider { get; private set; }
 
-  internal static void Init(DalamudPluginInterface pluginInterface, Plugin plugin) {
+  internal static void Init(IDalamudPluginInterface pluginInterface, Plugin plugin) {
     pluginInterface.Create<Services>();
     Instance = plugin;
     Config = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
     Config.Initialize();
-    XivCommon = new XivCommonBase(pluginInterface, Hooks.None);
     WindowSystem.AddWindow(SettingsUI);
     WindowSystem.AddWindow(WarningUI);
+#if DEBUG
+    WindowSystem.AddWindow(DebugUI);
+#endif
     Log.Info($"{ClientState.LocalPlayer is null}");
     HousingTimer = new HousingTimer();
   }

@@ -46,7 +46,7 @@ jobs:
   release:
     needs: build
     runs-on: windows-latest
-    if: "contains(toJSON(github.event.commits.*.message), '[PUSH]') && github.event_name == 'push'"
+    if: contains(toJSON(github.event.commits.*.message), '[PUSH]') && github.event_name == 'push'
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2.2.0

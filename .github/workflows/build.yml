@@ -43,6 +43,31 @@ jobs:
           path: ${{env.PROJECT_NAME}}/bin/Release/${{env.PROJECT_NAME}}
           if-no-files-found: error
 
+  debug:
+    runs-on: windows-latest
+    steps:
+      - name: Debug
+        shell: powershell
+        run: |
+          Write-Host -Object 'github.event.commits.*.message''
+          Write-Host -Object '${{github.event.commits.*.message}}''
+          Write-Host -Object '${{toJSON(github.event.commits.*.message)}}''
+          Write-Host -Object 'github.event.commits.*''
+          Write-Host -Object '${{github.event.commits.*}}''
+          Write-Host -Object '${{toJSON(github.event.commits.*)}}''
+          Write-Host -Object 'github.event.commits''
+          Write-Host -Object '${{github.event.commits}}''
+          Write-Host -Object '${{toJSON(github.event.commits)}}''
+          Write-Host -Object 'github.event''
+          Write-Host -Object '${{github.event}}''
+          Write-Host -Object '${{toJSON(github.event)}}''
+          Write-Host -Object 'github.event_name''
+          Write-Host -Object '${{github.event_name}}''
+          Write-Host -Object '${{toJSON(github.event_name)}}''
+          Write-Host -Object 'github''
+          Write-Host -Object '${{github}}''
+          Write-Host -Object '${{toJSON(github)}}''
+
   release:
     needs: build
     runs-on: windows-latest

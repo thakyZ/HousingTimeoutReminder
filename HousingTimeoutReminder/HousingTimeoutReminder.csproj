@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>1.0.2.4</Version>
+    <Version>1.0.3.0</Version>
     <Company></Company>
     <Authors>Neko Boi Nick</Authors>
     <Description>
@@ -23,7 +23,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFramework>net7.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <Platforms>x64</Platforms>
     <Configurations>Release;Debug</Configurations>
     <Nullable>Enable</Nullable>
@@ -31,7 +31,7 @@
     <LangVersion>Latest</LangVersion>
     <GenerateDependencyFile>False</GenerateDependencyFile>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
-    <ProduceReferenceAssembly>Talse</ProduceReferenceAssembly>
+    <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
     <RestorePackagesWithLockFile>True</RestorePackagesWithLockFile>
     <CopyLocalLockFileAssemblies>True</CopyLocalLockFileAssemblies>
     <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
@@ -40,7 +40,7 @@
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <AssemblyName>$(AssemblyName)</AssemblyName>
-    <DebugType>pdbonly</DebugType>
+    <DebugType>PDBOnly</DebugType>
     <Optimize>True</Optimize>
     <OutputPath>$(ProjectDir)bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -145,10 +145,9 @@
     <ItemGroup>
       <DeleteAssemblies Include="$(TargetDir)$(AssemblyName).deps.json" />
     </ItemGroup>
-    <Message Text="ProjectDir = $(ProjectDir)" Importance="High" />
     <Message Text="Deleting @(DeleteAssemblies)" Importance="High" />
     <Delete Files="@(DeleteAssemblies)" />
-    <RemoveDir Directories="$(TargetDir)\ref\" />
+    <!--<RemoveDir Directories="$(TargetDir)ref\" />-->
   </Target>
 
   <Target Name="PostBuild" AfterTargets="CleanOutDir" Condition="'$(Configuration)'=='Debug'">

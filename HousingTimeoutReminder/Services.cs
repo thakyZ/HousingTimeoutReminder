@@ -1,10 +1,15 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 using Dalamud.Game;
+using Dalamud.Game.ClientState.Resolvers;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+
+using Lumina.Excel;
+using Lumina.Excel.GeneratedSheets;
 
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler;
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.UI;
@@ -40,46 +45,105 @@ internal class Services {
   [NotNull, AllowNull]
   public static SettingsUI SettingsUI { get; } = new();
 
-  [PluginService]
-  [NotNull, AllowNull]
-  public static IClientState ClientState { get; private set; }
-  [PluginService]
-  [NotNull, AllowNull]
-  public static ICommandManager CommandManager { get; private set; }
-  [PluginService]
-  [NotNull, AllowNull]
-  public static DalamudPluginInterface PluginInterface { get; private set; }
-  [PluginService]
-  [NotNull, AllowNull]
-  public static IFramework Framework { get; private set; }
-  [PluginService]
-  [NotNull, AllowNull]
-  public static IGameGui GameGui { get; private set; }
-  [PluginService]
-  [NotNull, AllowNull]
-  public static IGameNetwork GameNetwork { get; private set; }
-  [PluginService]
-  [NotNull, AllowNull]
-  public static IObjectTable ObjectTable { get; private set; }
-  [PluginService]
-  [NotNull, AllowNull]
-  public static IPluginLog Log { get; private set; }
-  [PluginService]
-  [NotNull, AllowNull]
-  public static ISigScanner SigScanner { get; private set; }
-  [PluginService]
-  [NotNull, AllowNull]
-  public static IGameInteropProvider GameInteropProvider { get; private set; }
+  [NotNull, AllowNull][PluginService] public static IClientState           ClientState         { get; private set; }
+  [NotNull, AllowNull][PluginService] public static IDataManager           DataManager         { get; private set; }
+  [NotNull, AllowNull][PluginService] public static ICommandManager        CommandManager      { get; private set; }
+  [NotNull, AllowNull][PluginService] public static DalamudPluginInterface PluginInterface     { get; private set; }
+  [NotNull, AllowNull][PluginService] public static IFramework             Framework           { get; private set; }
+  [NotNull, AllowNull][PluginService] public static IGameGui               GameGui             { get; private set; }
+  [NotNull, AllowNull][PluginService] public static IGameNetwork           GameNetwork         { get; private set; }
+  [NotNull, AllowNull][PluginService] public static IObjectTable           ObjectTable         { get; private set; }
+  [NotNull, AllowNull][PluginService] public static IPluginLog             PluginLog           { get; private set; }
+  [NotNull, AllowNull][PluginService] public static ISigScanner            SigScanner          { get; private set; }
+  [NotNull, AllowNull][PluginService] public static IGameInteropProvider   GameInteropProvider { get; private set; }
 
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  /// <typeparam name="T"></typeparam>
+  /// <param name="rowId"></param>
+  /// <returns></returns>
+  private static T? GetSheetAtRow<T>(uint rowId) where T : ExcelRow {
+    var sheet = DataManager.GetExcelSheet<T>();
+    if (sheet is null) return null;
+    return sheet.First(x => x.RowId == rowId);
+  }
+
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  /// <param name="homeWorld"></param>
+  /// <returns></returns>
+  internal static string? GetHomeWorldFromId(uint homeWorld) {
+    var sheet = GetSheetAtRow<World>(homeWorld);
+    if (sheet is null) return null;
+    return sheet.Name;
+  }
+
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  /// <param name="homeWorld"></param>
+  /// <returns></returns>
+  internal static string? GetHomeWorldFromId(uint? homeWorld) {
+    if (!homeWorld.HasValue) return null;
+    var sheet = GetSheetAtRow<World>(homeWorld.Value);
+    if (sheet is null) return null;
+    return sheet.Name;
+  }
+
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  /// <param name="homeWorld"></param>
+  /// <returns></returns>
+  internal static string? GetHomeWorldFromId(ExcelResolver<World> homeWorld) {
+    var sheet = homeWorld.GetWithLanguage(Dalamud.ClientLanguage.English);
+    if (sheet is null) return null;
+    return sheet.Name;
+  }
+
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  /// <returns></returns>
+  internal static string? GetCurrentPlayerName() {
+    return $"{ClientState.LocalPlayer?.Name.TextValue}@{GetHomeWorldFromId(ClientState.LocalPlayer?.HomeWorld.Id) ?? "unknown"}";
+  }
+
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  /// <returns></returns>
+  internal static PlayerId? GetCurrentPlayerId() {
+    var firstLastName = ClientState.LocalPlayer?.Name.TextValue;
+    if (firstLastName is null) return null;
+    var fistLastNameSplit = firstLastName.Split(' ');
+    return new PlayerId(fistLastNameSplit[0], fistLastNameSplit[1], ClientState.LocalPlayer?.HomeWorld.Id);
+  }
+
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  public static bool IsLoggedIn => ClientState.IsLoggedIn;
+
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  /// <param name="pluginInterface"></param>
+  /// <param name="plugin"></param>
   internal static void Init(DalamudPluginInterface pluginInterface, Plugin plugin) {
     pluginInterface.Create<Services>();
     Instance = plugin;
     Config = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
     Config.Initialize();
+    Config.Migrate();
     XivCommon = new XivCommonBase(pluginInterface, Hooks.None);
     WindowSystem.AddWindow(SettingsUI);
     WindowSystem.AddWindow(WarningUI);
-    Log.Info($"{ClientState.LocalPlayer is null}");
+#if DEBUG
+    PluginLog.Debug($"{ClientState.LocalPlayer is null}");
+#endif
     HousingTimer = new HousingTimer();
   }
 }

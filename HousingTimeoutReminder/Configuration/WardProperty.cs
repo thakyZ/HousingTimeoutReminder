@@ -3,6 +3,10 @@
 /// Interface for housing Properties.
 /// </summary>
 public interface IWardProperty {
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  /// <returns></returns>
   public abstract bool IsValid();
 }
 
@@ -14,18 +18,22 @@ public class WardProperty : IWardProperty {
   /// Whether or not this housing plot is enabled.
   /// </summary>
   public bool Enabled { get; set; }
+
   /// <summary>
   /// The last visit of the player in Unix epoch timestamp format.
   /// </summary>
   public long LastVisit { get; set; }
+
   /// <summary>
   /// The district the housing location is in.
   /// </summary>
   public District District { get; set; } = District.Unknown;
+
   /// <summary>
   /// The specific ward the property is in.
   /// </summary>
   public ushort Ward { get; set; }
+
   /// <summary>
   /// Checks if this property is valid.
   /// </summary>

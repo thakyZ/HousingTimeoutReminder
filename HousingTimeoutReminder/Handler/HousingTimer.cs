@@ -5,62 +5,60 @@ using System.Threading.Tasks;
 using XivCommon.Functions.Housing;
 
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler;
+/// <summary>
+/// TODO: Write summary.
+/// </summary>
 public class HousingTimer {
-  public PerPlayerConfiguration playerConfiguration { get; set; }
-
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
   public HousingTimer() {
-    if (Configuration.GetPlayerConfiguration() is null) {
-      playerConfiguration = Configuration.GetPlayerConfiguration()!;
-    } else {
-      playerConfiguration = new PerPlayerConfiguration() { OwnerName = "Unknown" };
-    }
   }
 
-  public void Load() {
-    playerConfiguration = Configuration.GetPlayerConfiguration()!;
-  }
-
-  public void Unload() {
-    var playerConfig = Configuration.GetPlayerConfiguration();
-    if (playerConfig == null || playerConfig is null) {
-      Services.Log.Information($"isNull: {playerConfig == null || playerConfig is null}");
-    } else {
-      playerConfig!.Update(playerConfiguration);
-    }
-  }
-
-  public bool CheckTime(int type) {
-    if (type == 0 && playerConfiguration.FreeCompanyEstate.Enabled) {
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  /// <param name="type"></param>
+  /// <param name="playerConfig"></param>
+  /// <returns></returns>
+  public bool CheckTime(int type, PerPlayerConfiguration playerConfig) {
+    if (type == 0 && playerConfig.FreeCompanyEstate.Enabled) {
       var dateTimeOffset = (DateTimeOffset)DateTime.Now;
-      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfiguration.FreeCompanyEstate.LastVisit);
+      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfig.FreeCompanyEstate.LastVisit);
       if (dateTimeOffsetLast.ToUnixTimeSeconds() < dateTimeOffset.ToUnixTimeSeconds()) {
         return true;
       }
-    } else if (type == 1 && playerConfiguration.PrivateEstate.Enabled) {
+    } else if (type == 1 && playerConfig.PrivateEstate.Enabled) {
       var dateTimeOffset = (DateTimeOffset)DateTime.Now;
-      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfiguration.PrivateEstate.LastVisit);
+      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfig.PrivateEstate.LastVisit);
       if (dateTimeOffsetLast.ToUnixTimeSeconds() < dateTimeOffset.ToUnixTimeSeconds()) {
         return true;
       }
-    } else if (type == 2 && playerConfiguration.Apartment.Enabled) {
+    } else if (type == 2 && playerConfig.Apartment.Enabled) {
       var dateTimeOffset = (DateTimeOffset)DateTime.Now;
-      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfiguration.Apartment.LastVisit);
+      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfig.Apartment.LastVisit);
       if (dateTimeOffsetLast.ToUnixTimeSeconds() < dateTimeOffset.ToUnixTimeSeconds()) {
         return true;
       }
     }
     return false;
   }
-  public (bool, bool, bool) CheckTime() {
+
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  /// <param name="playerConfig"></param>
+  /// <returns></returns>
+  public (bool, bool, bool) CheckTime(PerPlayerConfiguration playerConfig) {
     var dateTimeOffset1 = ((DateTimeOffset)DateTime.Now);
-    var dateTimeOffsetAfterTime1 = DateTimeOffset.FromUnixTimeSeconds(playerConfiguration.FreeCompanyEstate.LastVisit).AddDays(Services.Config.DaysToWait);
+    var dateTimeOffsetAfterTime1 = DateTimeOffset.FromUnixTimeSeconds(playerConfig.FreeCompanyEstate.LastVisit).AddDays(Services.Config.DaysToWait);
     var dateTimeOffset2 = ((DateTimeOffset)DateTime.Now);
-    var dateTimeOffsetAfterTime2 = DateTimeOffset.FromUnixTimeSeconds(playerConfiguration.PrivateEstate.LastVisit).AddDays(Services.Config.DaysToWait);
+    var dateTimeOffsetAfterTime2 = DateTimeOffset.FromUnixTimeSeconds(playerConfig.PrivateEstate.LastVisit).AddDays(Services.Config.DaysToWait);
     var dateTimeOffset3 = ((DateTimeOffset)DateTime.Now);
-    var dateTimeOffsetAfterTime3 = DateTimeOffset.FromUnixTimeSeconds(playerConfiguration.Apartment.LastVisit).AddDays(Services.Config.DaysToWait);
-    return (playerConfiguration.FreeCompanyEstate.Enabled && dateTimeOffset1.ToUnixTimeSeconds() > dateTimeOffsetAfterTime1.ToUnixTimeSeconds(),
-      playerConfiguration.PrivateEstate.Enabled && dateTimeOffset2.ToUnixTimeSeconds() > dateTimeOffsetAfterTime2.ToUnixTimeSeconds(),
-      playerConfiguration.Apartment.Enabled && dateTimeOffset3.ToUnixTimeSeconds() > dateTimeOffsetAfterTime3.ToUnixTimeSeconds());
+    var dateTimeOffsetAfterTime3 = DateTimeOffset.FromUnixTimeSeconds(playerConfig.Apartment.LastVisit).AddDays(Services.Config.DaysToWait);
+    return (playerConfig.FreeCompanyEstate.Enabled && dateTimeOffset1.ToUnixTimeSeconds() > dateTimeOffsetAfterTime1.ToUnixTimeSeconds(),
+      playerConfig.PrivateEstate.Enabled && dateTimeOffset2.ToUnixTimeSeconds() > dateTimeOffsetAfterTime2.ToUnixTimeSeconds(),
+      playerConfig.Apartment.Enabled && dateTimeOffset3.ToUnixTimeSeconds() > dateTimeOffsetAfterTime3.ToUnixTimeSeconds());
   }
 
   /// <summary>
@@ -112,75 +110,94 @@ public class HousingTimer {
   /// </summary>
   /// <param name="territory">The ID for the territory the player is in.</param>
   /// <return>Returns <see langword="true"/> if successful.</return>
-  public bool CheckLocation(ushort territory) {
+  public bool CheckLocation(ushort territory, PerPlayerConfiguration playerConfig) {
     if (Services.XivCommon.Functions.Housing.Location is not null) {
       HousingLocation loc = Services.XivCommon.Functions.Housing.Location;
-      if (IsApartment(territory) && playerConfiguration.Apartment.Enabled) {
+      if (IsApartment(territory) && playerConfig.Apartment.Enabled) {
         ushort apartmentNumber = loc.Apartment ?? 0;
         bool apartmentWing = loc.ApartmentWing != 1;
-        if (apartmentNumber == playerConfiguration.Apartment.ApartmentNumber
-          && apartmentWing == playerConfiguration.Apartment.Subdistrict
-          && loc.Ward == playerConfiguration.Apartment.Ward
-          && ConvertToDistrict(territory) == playerConfiguration.Apartment.District && CheckTime(2)) {
-          playerConfiguration.Apartment.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
+        if (apartmentNumber == playerConfig.Apartment.ApartmentNumber
+          && apartmentWing == playerConfig.Apartment.Subdistrict
+          && loc.Ward == playerConfig.Apartment.Ward
+          && ConvertToDistrict(territory) == playerConfig.Apartment.District && CheckTime(2, playerConfig)) {
+          playerConfig.Apartment.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
           Update();
           return true;
         }
       } else {
         ushort plot = loc.Plot ?? 0;
-        if (playerConfiguration.PrivateEstate.Enabled
-          && plot == playerConfiguration.PrivateEstate.Plot
-          && loc.Ward == playerConfiguration.PrivateEstate.Ward
-          && ConvertToDistrict(territory) == playerConfiguration.PrivateEstate.District && CheckTime(1)) {
-          playerConfiguration.PrivateEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
+        if (playerConfig.PrivateEstate.Enabled
+          && plot == playerConfig.PrivateEstate.Plot
+          && loc.Ward == playerConfig.PrivateEstate.Ward
+          && ConvertToDistrict(territory) == playerConfig.PrivateEstate.District && CheckTime(1, playerConfig)) {
+          playerConfig.PrivateEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
           Update();
           return true;
-        } else if (playerConfiguration.FreeCompanyEstate.Enabled
-          && plot == playerConfiguration.FreeCompanyEstate.Plot
-          && loc.Ward == playerConfiguration.FreeCompanyEstate.Ward
-          && ConvertToDistrict(territory) == playerConfiguration.FreeCompanyEstate.District && CheckTime(0)) {
-          playerConfiguration.FreeCompanyEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
+        } else if (playerConfig.FreeCompanyEstate.Enabled
+          && plot == playerConfig.FreeCompanyEstate.Plot
+          && loc.Ward == playerConfig.FreeCompanyEstate.Ward
+          && ConvertToDistrict(territory) == playerConfig.FreeCompanyEstate.District && CheckTime(0, playerConfig)) {
+          playerConfig.FreeCompanyEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
           Update();
           return true;
         }
       }
     }
-    Services.Instance.IsLate = CheckTime();
+    playerConfig.IsLate = CheckTime(playerConfig);
     return true;
   }
 
   /// <summary>
   /// The function to call when changing instance. Checks timers after.
   /// </summary>
-  /// <param name="sender">The object instance of the sender.</param>
   /// <param name="e">The territory ID as a ushort.</param>
+  /// <param name="playerId">The id of the player to check.</param>
   public void OnTerritoryChanged(ushort e) {
-    Task.Run(async () => await TestFunctionsNotNullAsync()).ContinueWith((t) => CheckLocation(e));
+    Task.Run(TestFunctionsNotNullAsync).ContinueWith((t) => CheckLocation(e, Configuration.GetCurrentPlayerConfig()));
   }
 
-  public async Task<bool> ManualCheckAsync() {
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  /// <param name="playerConfig"></param>
+  /// <returns></returns>
+  public async Task<bool> ManualCheckAsync(PerPlayerConfiguration playerConfig) {
     var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
     var _task = Task.Run(TestFunctionsNotNullAsync);
     bool _taskComplete;
     try {
-      var _taskContinue = _task.ContinueWith((value) => value.Result && CheckLocation(Services.ClientState.TerritoryType));
+      var _taskContinue = _task.ContinueWith((value) => value.Result && CheckLocation(Services.ClientState.TerritoryType, playerConfig));
       _taskComplete = await _taskContinue.WaitAsync(cts.Token);
     } catch (Exception ex) when (ex is OperationCanceledException) {
-      Services.Log.Error("Errored when waiting for task to complete.");
-      Services.Log.Error(ex.Message);
+      Services.PluginLog.Error("Errored when waiting for task to complete.");
+      Services.PluginLog.Error(ex.Message);
       return false;
     }
+    cts.Dispose();
     return _taskComplete;
   }
 
-  private static bool _isSaving;
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  private bool _isSaving;
 
-  private static int _singletons = 0;
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  private int _singletons = 0;
 
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
   private void DoManualSave() {
     Task.Run(WaitAndSaveAsync);
   }
 
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  /// <returns></returns>
   private async Task WaitAndSaveAsync() {
     if (_singletons > 0) {
       return;
@@ -197,12 +214,20 @@ public class HousingTimer {
     await Task.Delay(2000);
     _isSaving = false;
     _singletons--;
-
-    return;
   }
 
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
   public void Update() {
-    Configuration.GetPlayerConfiguration()!.Update(playerConfiguration);
     DoManualSave();
+  }
+
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  /// <returns></returns>
+  internal PlayerId GetCurrentPlayerId() {
+    return Services.Config.PlayerConfigs.Find(x => x.PlayerId?.Equals(Services.GetCurrentPlayerName()) ?? false)?.PlayerId ?? Configuration.AddNewPlayerFromCurrent().PlayerId!;
   }
 }

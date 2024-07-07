@@ -10,30 +10,55 @@ using FFXIVClientStructs.FFXIV.Common.Math;
 using ImGuiNET;
 
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.UI;
+/// <summary>
+/// TODO: Write summary.
+/// </summary>
 public class SettingsUI : Window, IDisposable {
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
   private const ImGuiWindowFlags WindowFlags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse |
                                                ImGuiWindowFlags.NoScrollbar |
                                                ImGuiWindowFlags.NoScrollWithMouse;
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
   public static string Name { get => "Housing Timeout Reminder Settings"; }
 
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
   public SettingsUI() : base(Name, WindowFlags) {
     Size = new Vector2(630, 500) * ImGuiHelpers.GlobalScale;
     SizeCondition = ImGuiCond.Always;
   }
 
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
   public void Dispose() {
     this.Dispose(true);
     GC.SuppressFinalize(this);
   }
 
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
   private bool _isDisposed = false;
 
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  /// <param name="disposing"></param>
   protected virtual void Dispose(bool disposing) {
     if (!_isDisposed && disposing) {
       this._isDisposed = true;
     }
   }
 
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
   private readonly Dictionary<string, int> DistrictDict = new() {
     { "Unknown", 0 },
     { "Goblet", 1 },
@@ -43,21 +68,40 @@ public class SettingsUI : Window, IDisposable {
     { "Shirogane", 5 }
   };
 
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
   private const int WardMax = 32;
+
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
   private const int PlotMax = 60;
+
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
   private const int ApartmentMax = 90;
 
-  private DateTimeOffset ShortenFunction(int type, bool next = false, bool now = false) {
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  /// <param name="type"></param>
+  /// <param name="playerConfig"></param>
+  /// <param name="next"></param>
+  /// <param name="now"></param>
+  /// <returns></returns>
+  private DateTimeOffset ShortenFunction(int type, PerPlayerConfiguration playerConfig, bool next = false, bool now = false) {
     long visit = 0;
     switch (type) {
       case 0:
-        visit = Services.HousingTimer.playerConfiguration.FreeCompanyEstate.LastVisit;
+        visit = playerConfig.FreeCompanyEstate.LastVisit;
         break;
       case 1:
-        visit = Services.HousingTimer.playerConfiguration.PrivateEstate.LastVisit;
+        visit = playerConfig.PrivateEstate.LastVisit;
         break;
       case 2:
-        visit = Services.HousingTimer.playerConfiguration.Apartment.LastVisit;
+        visit = playerConfig.Apartment.LastVisit;
         break;
     }
     var date = DateTimeOffset.FromUnixTimeSeconds(visit);
@@ -70,26 +114,253 @@ public class SettingsUI : Window, IDisposable {
     return date;
   }
 
-  private (string, string) CheckConsistancy(DateTimeOffset lastStamp, DateTimeOffset nextStamp) {
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  /// <param name="lastStamp"></param>
+  /// <param name="nextStamp"></param>
+  /// <param name="playerConfig"></param>
+  /// <returns></returns>
+  private (string, string) CheckConsistancy(DateTimeOffset lastStamp, DateTimeOffset nextStamp, PerPlayerConfiguration playerConfig) {
     if (lastStamp.ToUnixTimeSeconds() <= 946627200 && nextStamp.ToUnixTimeSeconds() <= 946627200) {
       return ("Never", "Now");
     } else if (lastStamp.ToUnixTimeSeconds() <= nextStamp.ToUnixTimeSeconds() &&
-      nextStamp.ToUnixTimeSeconds() >= ShortenFunction(0, false, true).ToUnixTimeSeconds()) {
+      nextStamp.ToUnixTimeSeconds() >= ShortenFunction(0, playerConfig, false, true).ToUnixTimeSeconds()) {
       return ($"{lastStamp:yyyy-MM-dd HH:mm:ss}", $"{nextStamp:yyyy-MM-dd HH:mm:ss}");
       //return ($"{lastStamp.ToUnixTimeSeconds()}",$"{nextStamp.ToUnixTimeSeconds()}");
-    } else if (nextStamp.ToUnixTimeSeconds() <= ShortenFunction(0, false, true).ToUnixTimeSeconds()) {
+    } else if (nextStamp.ToUnixTimeSeconds() <= ShortenFunction(0, playerConfig, false, true).ToUnixTimeSeconds()) {
       return ($"{lastStamp:yyyy-MM-dd HH:mm:ss}", "Now");
     } else {
       return ("Never", "Now");
     }
   }
 
-  public override void Draw() {
-    if (Services.HousingTimer.playerConfiguration is null) {
-      return;
+  /// <summary>
+  /// Draws player timeout settings for a single user.
+  /// </summary>
+  /// <param name="playerId">The player ID involved with the single player.</param>
+  [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S3267:Loops should be simplified with \"LINQ\" expressions", Justification = "<Pending>")]
+  public void DrawUserTimeoutSettings(PerPlayerConfiguration playerConfig) {
+    if (ImGui.CollapsingHeader("Free Company Estate")) {
+      if (playerConfig.FreeCompanyEstate.IsValid()) {
+        var Visit = CheckConsistancy(ShortenFunction(0, playerConfig), ShortenFunction(0, playerConfig, true), playerConfig);
+        ImGui.Text($"Your last visit was on: {Visit.Item1}");
+        ImGui.SameLine();
+        ImGui.Separator();
+        ImGui.SameLine();
+        ImGui.Text($"Your next visit is on: {Visit.Item2}");
+      } else {
+        ImGui.Text("No free company estate set.");
+      }
+      ImGui.Text("Enabled");
+      ImGui.SameLine();
+      var enabled = playerConfig.FreeCompanyEstate.Enabled;
+      if (ImGui.Checkbox("##FreeCompanyEstateEnabled", ref enabled)) {
+        playerConfig.FreeCompanyEstate.Enabled = enabled;
+      }
+      ImGui.SameLine();
+      ImGui.Separator();
+      ImGui.SameLine();
+      if (ImGui.Button("Reset##FreeCompanyEstateReset")) {
+        playerConfig.FreeCompanyEstate = new HousingPlot();
+      }
+      ImGui.Text("District");
+      ImGui.SameLine();
+      ImGui.SetNextItemWidth(100);
+      if (ImGui.BeginCombo("##FreeCompanyEstateDistrict", DistrictDict.Keys.ToList()[(int)playerConfig.FreeCompanyEstate.District])) {
+        foreach (var district in DistrictDict.Where(district => district.Value != 0)) {
+          if (ImGui.Selectable(district.Key, district.Value == (int)playerConfig.FreeCompanyEstate.District)) {
+            playerConfig.FreeCompanyEstate.District = (District)district.Value;
+          }
+        }
+        ImGui.EndCombo();
+      }
+      ImGui.SameLine();
+      ImGui.Separator();
+      ImGui.SameLine();
+      ImGui.Text("Ward");
+      ImGui.SameLine();
+      ImGui.SetNextItemWidth(100);
+      var ward = (int)playerConfig.FreeCompanyEstate.Ward;
+      if (ImGui.InputInt("##FreeCompanyEstateWard", ref ward, 1, 20)) {
+        if (ward > WardMax) {
+          ward = WardMax;
+        }
+        if (ward < 1) {
+          ward = 1;
+        }
+        playerConfig.FreeCompanyEstate.Ward = (ushort)ward;
+      }
+      ImGui.SameLine();
+      ImGui.Separator();
+      ImGui.SameLine();
+      ImGui.Text("Plot");
+      ImGui.SameLine();
+      ImGui.SetNextItemWidth(100);
+      var plot = (int)playerConfig.FreeCompanyEstate.Plot;
+      if (ImGui.InputInt("##FreeCompanyEstatePlot", ref plot, 1, 20)) {
+        if (plot > PlotMax) {
+          plot = PlotMax;
+        }
+        if (plot < 1) {
+          plot = 1;
+        }
+        playerConfig.FreeCompanyEstate.Plot = (ushort)plot;
+      }
     }
-    ImGui.Text($"Housing Configuration for {Services.HousingTimer.playerConfiguration.OwnerName}:");
 
+    if (ImGui.CollapsingHeader("Private Estate")) {
+      if (playerConfig.PrivateEstate.IsValid()) {
+        var Visit = CheckConsistancy(ShortenFunction(1, playerConfig), ShortenFunction(1, playerConfig, true), playerConfig);
+        ImGui.Text($"Your last visit was on: {Visit.Item1}");
+        ImGui.SameLine();
+        ImGui.Separator();
+        ImGui.SameLine();
+        ImGui.Text($"Your next visit is on: {Visit.Item2}");
+      } else {
+        ImGui.Text("No private estate set.");
+      }
+      ImGui.Text("Enabled");
+      ImGui.SameLine();
+      var enabled = playerConfig.PrivateEstate.Enabled;
+      if (ImGui.Checkbox("##PrivateEstateEnabled", ref enabled)) {
+        playerConfig.PrivateEstate.Enabled = enabled;
+      }
+      ImGui.SameLine();
+      ImGui.Separator();
+      ImGui.SameLine();
+      if (ImGui.Button("Reset##PrivateEstateReset")) {
+        playerConfig.PrivateEstate = new HousingPlot();
+      }
+      ImGui.Text("District");
+      ImGui.SameLine();
+      ImGui.SetNextItemWidth(100);
+      if (ImGui.BeginCombo("##PrivateEstateDistrict", DistrictDict.Keys.ToList()[(int)playerConfig.PrivateEstate.District])) {
+        foreach (var district in DistrictDict.Where(district => district.Value != 0)) {
+          if (ImGui.Selectable(district.Key, district.Value == (int)playerConfig.PrivateEstate.District)) {
+            playerConfig.PrivateEstate.District = (District)district.Value;
+          }
+        }
+        ImGui.EndCombo();
+      }
+      ImGui.SameLine();
+      ImGui.Separator();
+      ImGui.SameLine();
+      ImGui.Text("Ward");
+      ImGui.SameLine();
+      ImGui.SetNextItemWidth(100);
+      var ward = (int)playerConfig.PrivateEstate.Ward;
+      if (ImGui.InputInt("##PrivateEstateWard", ref ward, 1, 20)) {
+        if (ward > WardMax) {
+          ward = WardMax;
+        }
+        if (ward < 1) {
+          ward = 1;
+        }
+        playerConfig.PrivateEstate.Ward = (ushort)ward;
+      }
+      ImGui.SameLine();
+      ImGui.Separator();
+      ImGui.SameLine();
+      ImGui.Text("Plot");
+      ImGui.SameLine();
+      ImGui.SetNextItemWidth(100);
+      var plot = (int)playerConfig.PrivateEstate.Plot;
+      if (ImGui.InputInt("##PrivateEstatePlot", ref plot, 1, 20)) {
+        if (plot > PlotMax) {
+          plot = PlotMax;
+        }
+        if (plot < 1) {
+          plot = 1;
+        }
+        playerConfig.PrivateEstate.Plot = (ushort)plot;
+      }
+    }
+
+    if (ImGui.CollapsingHeader("Apartment")) {
+      if (playerConfig.Apartment.IsValid()) {
+        var Visit = CheckConsistancy(ShortenFunction(2, playerConfig), ShortenFunction(2, playerConfig, true), playerConfig);
+        ImGui.Text($"Your last visit was on: {Visit.Item1}");
+        ImGui.SameLine();
+        ImGui.Separator();
+        ImGui.SameLine();
+        ImGui.Text($"Your next visit is on: {Visit.Item2}");
+      } else {
+        ImGui.Text("No apartment Set.");
+      }
+      ImGui.Text("Enabled");
+      ImGui.SameLine();
+      var enabled = playerConfig.Apartment.Enabled;
+      if (ImGui.Checkbox("##ApartmentEnabled", ref enabled)) {
+        playerConfig.Apartment.Enabled = enabled;
+      }
+      ImGui.SameLine();
+      ImGui.Separator();
+      ImGui.SameLine();
+      if (ImGui.Button("Reset##ApartmentReset")) {
+        playerConfig.Apartment = new Apartment();
+      }
+      ImGui.Text("District");
+      ImGui.SameLine();
+      ImGui.SetNextItemWidth(100);
+      if (ImGui.BeginCombo("##ApartmentDistrict", DistrictDict.Keys.ToList()[(int)playerConfig.Apartment.District])) {
+        foreach (var district in DistrictDict.Where(district => district.Value != 0)) {
+          if (ImGui.Selectable(district.Key, district.Value == (int)playerConfig.Apartment.District)) {
+            playerConfig.Apartment.District = (District)district.Value;
+          }
+        }
+        ImGui.EndCombo();
+      }
+      ImGui.SameLine();
+      ImGui.Separator();
+      ImGui.SameLine();
+      ImGui.Text("Is Subdistrict");
+      ImGui.SameLine();
+      var isSubdistrict = playerConfig.Apartment.Subdistrict;
+      if (ImGui.Checkbox("##ApartmentIsSubdistrict", ref isSubdistrict)) {
+        playerConfig.Apartment.Subdistrict = isSubdistrict;
+      }
+      ImGui.SameLine();
+      ImGui.Separator();
+      ImGui.SameLine();
+      ImGui.Text("Ward");
+      ImGui.SameLine();
+      ImGui.SetNextItemWidth(100);
+      var ward = (int)playerConfig.Apartment.Ward;
+      if (ImGui.InputInt("##ApartmentWard", ref ward, 1, 20)) {
+        if (ward > WardMax) {
+          ward = WardMax;
+        }
+        if (ward < 1) {
+          ward = 1;
+        }
+        playerConfig.Apartment.Ward = (ushort)ward;
+      }
+      ImGui.Text("Apartment Number");
+      ImGui.SameLine();
+      ImGui.SetNextItemWidth(100);
+      var apartmentNumber = (int)playerConfig.Apartment.ApartmentNumber;
+      if (ImGui.InputInt("##ApartmentNumber", ref apartmentNumber, 1, 20)) {
+        if (apartmentNumber > ApartmentMax) {
+          apartmentNumber = ApartmentMax;
+        }
+        if (apartmentNumber < 1) {
+          apartmentNumber = 1;
+        }
+        playerConfig.Apartment.ApartmentNumber = (ushort)apartmentNumber;
+      }
+    }
+
+    if (ImGui.Button("Reset")) {
+      Services.Instance.CheckTimers();
+      playerConfig.IsDismissed = (false, false, false);
+    }
+  }
+
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  public override void Draw() {
     ImGui.BeginChild("scrolling", new Vector2(0, -(25 + ImGui.GetStyle().ItemSpacing.Y) * ImGuiHelpers.GlobalScale), false);
     ImGui.PushID("Sorted Stacks");
     if (ImGui.CollapsingHeader("Global Settings:")) {
@@ -106,217 +377,25 @@ public class SettingsUI : Window, IDisposable {
         }
         Services.Config.DaysToWait = (ushort)daysToWait;
       }
-    }
-
-    if (ImGui.CollapsingHeader("Free Company Estate")) {
-      if (Services.HousingTimer.playerConfiguration.FreeCompanyEstate.IsValid()) {
-        var Visit = CheckConsistancy(ShortenFunction(0), ShortenFunction(0, true));
-        ImGui.Text($"Your last visit was on: {Visit.Item1}");
-        ImGui.SameLine();
-        ImGui.Separator();
-        ImGui.SameLine();
-        ImGui.Text($"Your next visit is on: {Visit.Item2}");
-      } else {
-        ImGui.Text("No free company estate set.");
-      }
-      ImGui.Text("Enabled");
-      ImGui.SameLine();
-      var enabled = Services.HousingTimer.playerConfiguration.FreeCompanyEstate.Enabled;
-      if (ImGui.Checkbox("##FreeCompanyEstateEnabled", ref enabled)) {
-        Services.HousingTimer.playerConfiguration.FreeCompanyEstate.Enabled = enabled;
-      }
-      ImGui.SameLine();
-      ImGui.Separator();
-      ImGui.SameLine();
-      if (ImGui.Button("Reset##FreeCompanyEstateReset")) {
-        Services.HousingTimer.playerConfiguration.FreeCompanyEstate = new HousingPlot();
-      }
-      ImGui.Text("District");
-      ImGui.SameLine();
-      ImGui.SetNextItemWidth(100);
-      if (ImGui.BeginCombo("##FreeCompanyEstateDistrict", DistrictDict.Keys.ToList()[(int)Services.HousingTimer.playerConfiguration.FreeCompanyEstate.District])) {
-        foreach (var district in DistrictDict.Where(district => district.Value != 0)) {
-          if (ImGui.Selectable(district.Key, district.Value == (int)Services.HousingTimer.playerConfiguration.FreeCompanyEstate.District)) {
-            Services.HousingTimer.playerConfiguration.FreeCompanyEstate.District = (District)district.Value;
-          }
-        }
-        ImGui.EndCombo();
-      }
-      ImGui.SameLine();
-      ImGui.Separator();
-      ImGui.SameLine();
-      ImGui.Text("Ward");
-      ImGui.SameLine();
-      ImGui.SetNextItemWidth(100);
-      var ward = (int)Services.HousingTimer.playerConfiguration.FreeCompanyEstate.Ward;
-      if (ImGui.InputInt("##FreeCompanyEstateWard", ref ward, 1, 20)) {
-        if (ward > WardMax) {
-          ward = WardMax;
-        }
-        if (ward < 1) {
-          ward = 1;
-        }
-        Services.HousingTimer.playerConfiguration.FreeCompanyEstate.Ward = (ushort)ward;
-      }
-      ImGui.SameLine();
-      ImGui.Separator();
-      ImGui.SameLine();
-      ImGui.Text("Plot");
-      ImGui.SameLine();
-      ImGui.SetNextItemWidth(100);
-      var plot = (int)Services.HousingTimer.playerConfiguration.FreeCompanyEstate.Plot;
-      if (ImGui.InputInt("##FreeCompanyEstatePlot", ref plot, 1, 20)) {
-        if (plot > PlotMax) {
-          plot = PlotMax;
-        }
-        if (plot < 1) {
-          plot = 1;
-        }
-        Services.HousingTimer.playerConfiguration.FreeCompanyEstate.Plot = (ushort)plot;
+      var displayAllPlayers = Services.Config.ShowAllPlayers;
+      if (ImGui.Checkbox("Show All Player Timeouts##GlobalShowAllPlayers", ref displayAllPlayers)) {
+        Services.Config.ShowAllPlayers = displayAllPlayers;
       }
     }
 
-    if (ImGui.CollapsingHeader("Private Estate")) {
-      if (Services.HousingTimer.playerConfiguration.PrivateEstate.IsValid()) {
-        var Visit = CheckConsistancy(ShortenFunction(1), ShortenFunction(1, true));
-        ImGui.Text($"Your last visit was on: {Visit.Item1}");
-        ImGui.SameLine();
-        ImGui.Separator();
-        ImGui.SameLine();
-        ImGui.Text($"Your next visit is on: {Visit.Item2}");
-      } else {
-        ImGui.Text("No private estate set.");
-      }
-      ImGui.Text("Enabled");
-      ImGui.SameLine();
-      var enabled = Services.HousingTimer.playerConfiguration.PrivateEstate.Enabled;
-      if (ImGui.Checkbox("##PrivateEstateEnabled", ref enabled)) {
-        Services.HousingTimer.playerConfiguration.PrivateEstate.Enabled = enabled;
-      }
-      ImGui.SameLine();
-      ImGui.Separator();
-      ImGui.SameLine();
-      if (ImGui.Button("Reset##PrivateEstateReset")) {
-        Services.HousingTimer.playerConfiguration.PrivateEstate = new HousingPlot();
-      }
-      ImGui.Text("District");
-      ImGui.SameLine();
-      ImGui.SetNextItemWidth(100);
-      if (ImGui.BeginCombo("##PrivateEstateDistrict", DistrictDict.Keys.ToList()[(int)Services.HousingTimer.playerConfiguration.PrivateEstate.District])) {
-        foreach (var district in DistrictDict.Where(district => district.Value != 0)) {
-          if (ImGui.Selectable(district.Key, district.Value == (int)Services.HousingTimer.playerConfiguration.PrivateEstate.District)) {
-            Services.HousingTimer.playerConfiguration.PrivateEstate.District = (District)district.Value;
-          }
+    if (Services.Config.ShowAllPlayers) {
+      Services.PluginLog.Debug($"Services.Config.PlayerConfigs.Count: {Services.Config.PlayerConfigs.Count}");
+      foreach (var playerConfig in Services.Config.PlayerConfigs) {
+        if (ImGui.CollapsingHeader($"Housing Configuration for {playerConfig.DisplayName}")) {
+          DrawUserTimeoutSettings(playerConfig);
         }
-        ImGui.EndCombo();
       }
-      ImGui.SameLine();
-      ImGui.Separator();
-      ImGui.SameLine();
-      ImGui.Text("Ward");
-      ImGui.SameLine();
-      ImGui.SetNextItemWidth(100);
-      var ward = (int)Services.HousingTimer.playerConfiguration.PrivateEstate.Ward;
-      if (ImGui.InputInt("##PrivateEstateWard", ref ward, 1, 20)) {
-        if (ward > WardMax) {
-          ward = WardMax;
-        }
-        if (ward < 1) {
-          ward = 1;
-        }
-        Services.HousingTimer.playerConfiguration.PrivateEstate.Ward = (ushort)ward;
-      }
-      ImGui.SameLine();
-      ImGui.Separator();
-      ImGui.SameLine();
-      ImGui.Text("Plot");
-      ImGui.SameLine();
-      ImGui.SetNextItemWidth(100);
-      var plot = (int)Services.HousingTimer.playerConfiguration.PrivateEstate.Plot;
-      if (ImGui.InputInt("##PrivateEstatePlot", ref plot, 1, 20)) {
-        if (plot > PlotMax) {
-          plot = PlotMax;
-        }
-        if (plot < 1) {
-          plot = 1;
-        }
-        Services.HousingTimer.playerConfiguration.PrivateEstate.Plot = (ushort)plot;
-      }
+    } else if (Services.IsLoggedIn) {
+      var playerConfig = Configuration.GetCurrentPlayerConfig();
+      ImGui.Text($"Housing Configuration for {playerConfig.DisplayName}:");
+      DrawUserTimeoutSettings(playerConfig);
     }
 
-    if (ImGui.CollapsingHeader("Apartment")) {
-      if (Services.HousingTimer.playerConfiguration.Apartment.IsValid()) {
-        var Visit = CheckConsistancy(ShortenFunction(2), ShortenFunction(2, true));
-        ImGui.Text($"Your last visit was on: {Visit.Item1}");
-        ImGui.SameLine();
-        ImGui.Separator();
-        ImGui.SameLine();
-        ImGui.Text($"Your next visit is on: {Visit.Item2}");
-      } else {
-        ImGui.Text("No apartment Set.");
-      }
-      ImGui.Text("Enabled");
-      ImGui.SameLine();
-      var enabled = Services.HousingTimer.playerConfiguration.Apartment.Enabled;
-      if (ImGui.Checkbox("##ApartmentEnabled", ref enabled)) {
-        Services.HousingTimer.playerConfiguration.Apartment.Enabled = enabled;
-      }
-      ImGui.SameLine();
-      ImGui.Separator();
-      ImGui.SameLine();
-      if (ImGui.Button("Reset##ApartmentReset")) {
-        Services.HousingTimer.playerConfiguration.Apartment = new Apartment();
-      }
-      ImGui.Text("District");
-      ImGui.SameLine();
-      ImGui.SetNextItemWidth(100);
-      if (ImGui.BeginCombo("##ApartmentDistrict", DistrictDict.Keys.ToList()[(int)Services.HousingTimer.playerConfiguration.Apartment.District])) {
-        foreach (var district in DistrictDict.Where(district => district.Value != 0)) {
-          if (ImGui.Selectable(district.Key, district.Value == (int)Services.HousingTimer.playerConfiguration.Apartment.District)) {
-            Services.HousingTimer.playerConfiguration.Apartment.District = (District)district.Value;
-          }
-        }
-        ImGui.EndCombo();
-      }
-      ImGui.SameLine();
-      ImGui.Separator();
-      ImGui.SameLine();
-      ImGui.Text("Is Subdistrict");
-      ImGui.SameLine();
-      var isSubdistrict = Services.HousingTimer.playerConfiguration.Apartment.Subdistrict;
-      if (ImGui.Checkbox("##ApartmentIsSubdistrict", ref isSubdistrict)) {
-        Services.HousingTimer.playerConfiguration.Apartment.Subdistrict = isSubdistrict;
-      }
-      ImGui.SameLine();
-      ImGui.Separator();
-      ImGui.SameLine();
-      ImGui.Text("Ward");
-      ImGui.SameLine();
-      ImGui.SetNextItemWidth(100);
-      var ward = (int)Services.HousingTimer.playerConfiguration.Apartment.Ward;
-      if (ImGui.InputInt("##ApartmentWard", ref ward, 1, 20)) {
-        if (ward > WardMax) {
-          ward = WardMax;
-        }
-        if (ward < 1) {
-          ward = 1;
-        }
-        Services.HousingTimer.playerConfiguration.Apartment.Ward = (ushort)ward;
-      }
-      ImGui.Text("Apartment Number");
-      ImGui.SameLine();
-      ImGui.SetNextItemWidth(100);
-      var apartmentNumber = (int)Services.HousingTimer.playerConfiguration.Apartment.ApartmentNumber;
-      if (ImGui.InputInt("##ApartmentNumber", ref apartmentNumber, 1, 20)) {
-        if (apartmentNumber > ApartmentMax) {
-          apartmentNumber = ApartmentMax;
-        }
-        if (apartmentNumber < 1) {
-          apartmentNumber = 1;
-        }
-        Services.HousingTimer.playerConfiguration.Apartment.ApartmentNumber = (ushort)apartmentNumber;
-      }
-    }
     ImGui.PopID();
     ImGui.EndChild();
     if (ImGui.Button("Save")) Services.HousingTimer.Update();
@@ -337,10 +416,6 @@ public class SettingsUI : Window, IDisposable {
     ImGui.SameLine();
     ImGui.Separator();
     ImGui.SameLine();
-    if (ImGui.Button("Reset")) {
-      Services.Instance.CheckTimers();
-      Services.Instance.IsDismissed = (false, false, false);
-    }
 
     ImGui.End();
   }

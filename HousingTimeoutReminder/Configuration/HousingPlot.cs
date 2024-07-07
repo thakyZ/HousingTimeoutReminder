@@ -11,5 +11,11 @@ public class HousingPlot : WardProperty {
   /// </summary>
   public ushort Plot { get; set; }
 
-  public override bool IsValid() { return !District.Equals(District.Unknown) && (Ward > 0) && (Plot > 0); }
+  /// <summary>
+  /// TODO: Write summary.
+  /// </summary>
+  /// <returns></returns>
+  public override bool IsValid() {
+    return !District.Equals(District.Unknown) && (Ward > 0) && (Plot > 0);
+  }
 }

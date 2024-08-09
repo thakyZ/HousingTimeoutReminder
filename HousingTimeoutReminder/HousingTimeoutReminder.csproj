@@ -42,8 +42,9 @@
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <AssemblyName>$(AssemblyName)</AssemblyName>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>True</Optimize>
+    <DebugSymbols>True</DebugSymbols>
+    <DebugType>Full</DebugType>
+    <Optimize>False</Optimize>
     <OutputPath>$(ProjectDir)bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -52,9 +53,9 @@
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <AssemblyName>$(AssemblyName)2</AssemblyName>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
+    <DebugSymbols>True</DebugSymbols>
+    <DebugType>Full</DebugType>
+    <Optimize>False</Optimize>
     <OutputPath>$(DalamudDevPlugins)\$(MSBuildProjectName)</OutputPath>
     <BaseOutputPath>$(DalamudDevPlugins)\$(MSBuildProjectName)</BaseOutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>

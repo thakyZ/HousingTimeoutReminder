@@ -28,6 +28,11 @@ public class Configuration : IPluginConfiguration {
   /// <summary>
   /// The configuration directory for the plugin.
   /// </summary>
+  public List<PerPlayerConfiguration> PlayerConfigs { get; set; } = [];
+
+  /// <summary>
+  /// The configuration directory for the plugin.
+  /// </summary>
   public static string ConfigDirectory => Services.PluginInterface.GetPluginConfigDirectory();
 
   /// <summary>
@@ -104,7 +109,6 @@ public class Configuration : IPluginConfiguration {
   /// <summary>
   /// Initializes the plugin config.
   /// </summary>
-  /// <param name="pluginInterface">An instanced version of the <see cref="DalamudPluginInterface"/>.</param>
   public void Initialize() {
     if (DaysToWait > 30) {
       DaysToWait = 30;

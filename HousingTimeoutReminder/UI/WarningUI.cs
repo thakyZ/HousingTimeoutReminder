@@ -59,7 +59,7 @@ public class WarningUI : Window, IDisposable {
   /// <summary>
   /// TODO: Write summary.
   /// </summary>
-  private Vector2 oldPoistion = Vector2.Zero;
+  private Vector2 oldPostion = Vector2.Zero;
 
   /// <summary>
   /// TODO: Write summary.
@@ -69,9 +69,9 @@ public class WarningUI : Window, IDisposable {
             ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse |
             ImGuiWindowFlags.NoTitleBar;
     this.BgAlpha = 0.5f;
-    if (!oldPoistion.Equals(ImGui.GetWindowPos())) {
+    if (!oldPostion.Equals(ImGui.GetWindowPos())) {
       Services.Config.WarningPosition = HousingTimeoutReminder.Position.FromVector2(ImGui.GetWindowPos());
-      oldPoistion = ImGui.GetWindowPos();
+      oldPostion = ImGui.GetWindowPos();
     }
   }
 
@@ -120,7 +120,7 @@ public class WarningUI : Window, IDisposable {
   public void DisplayForPlayer(int type, PerPlayerConfiguration playerConfig) {
     if (type == 0) {
       var dateTimeOffset = (DateTimeOffset)DateTime.Now;
-      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfig.FreeCompanyEstate.LastVisit);
+      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(Services.HousingTimer.playerConfiguration.FreeCompanyEstate.LastVisit);
       var pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
       ImGui.Text($"Your Free Company Estate has not been visited in, {pastDays} days.");
       ImGui.Text("You can dismiss this at the button below.");
@@ -129,7 +129,7 @@ public class WarningUI : Window, IDisposable {
       }
     } else if (type == 1) {
       var dateTimeOffset = (DateTimeOffset)DateTime.Now;
-      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfig.PrivateEstate.LastVisit);
+      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(Services.HousingTimer.playerConfiguration.PrivateEstate.LastVisit);
       var pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
       ImGui.Text($"Your Private Estate has not been visited in, {pastDays} days.");
       ImGui.Text("You can dismiss this at the button below.");
@@ -138,7 +138,7 @@ public class WarningUI : Window, IDisposable {
       }
     } else if (type == 2) {
       var dateTimeOffset = (DateTimeOffset)DateTime.Now;
-      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfig.Apartment.LastVisit);
+      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(Services.HousingTimer.playerConfiguration.Apartment.LastVisit);
       var pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
       ImGui.Text($"Your Apartment has not been visited in, {pastDays} days.");
       ImGui.Text("You can dismiss this at the button below.");
@@ -194,67 +194,13 @@ public class WarningUI : Window, IDisposable {
     if (Services.Instance.Testing) {
       DrawTesting();
     } else {
-      if (Services.Config.ShowAllPlayers) {
-        var playerConfig = Services.Config.PlayerConfigs[playerPage];
-        if ((!playerConfig.IsLate.FreeCompany || playerConfig.IsDismissed.FreeCompany) && (!playerConfig.IsLate.Private || playerConfig.IsDismissed.Private) && (!playerConfig.IsLate.Apartment || playerConfig.IsDismissed.Apartment)) {
-          this.IsOpen = false;
-        }
-        DrawWarning(playerTypePage, playerConfig);
-
-        ImGui.PushFont(UiBuilder.IconFont);
-        ImGui.SameLine();
-        if (ImGui.Button(FontAwesomeIcon.ArrowLeft.ToIconString(), new Vector2(16, 16))) {
-          playerTypePage -= 1;
-          if (playerTypePage < 0) {
-            playerTypePage = 3;
-            playerPage -= 1;
-          }
-          if (playerPage < 0) {
-            playerPage = Services.Config.PlayerConfigs.Count - 1;
-          }
-        }
-        ImGui.SameLine();
-        if (ImGui.Button(FontAwesomeIcon.ArrowRight.ToIconString(), new Vector2(16, 16))) {
-          playerTypePage += 1;
-          if (playerTypePage > 3) {
-            playerTypePage = 0;
-            playerPage += 1;
-          }
-          if (playerPage >= Services.Config.PlayerConfigs.Count) {
-            playerPage = 0;
-          }
-        }
-        ImGui.PopFont();
-      } else {
-        var playerConfig = Configuration.GetCurrentPlayerConfig();
-        if ((!playerConfig.IsLate.FreeCompany || playerConfig.IsDismissed.FreeCompany) && (!playerConfig.IsLate.Private || playerConfig.IsDismissed.Private) && (!playerConfig.IsLate.Apartment || playerConfig.IsDismissed.Apartment)) {
-          this.IsOpen = false;
-        }
-        DrawWarning(playerTypePage, playerConfig);
-
-        ImGui.PushFont(UiBuilder.IconFont);
-        ImGui.SameLine();
-        if (ImGui.Button(FontAwesomeIcon.ArrowLeft.ToIconString(), new Vector2(16, 16))) {
-          playerTypePage -= 1;
-          if (playerTypePage < 0) {
-            playerTypePage = 3;
-          }
-        }
-        ImGui.SameLine();
-        if (ImGui.Button(FontAwesomeIcon.ArrowRight.ToIconString(), new Vector2(16, 16))) {
-          playerTypePage += 1;
-          if (playerTypePage > 3) {
-            playerTypePage = 0;
-          }
-        }
-        ImGui.PopFont();
+      if (DrawWarning(0, Services.Instance.IsLate.Item1 && !FCDismissed)) {
+      } else if (DrawWarning(1, Services.Instance.IsLate.Item2 && !PDismissed)) {
+      } else if (DrawWarning(2, Services.Instance.IsLate.Item3 && !ADismissed)) {
       }
-
-      ImGui.End();
-      if (Position.HasValue) {
-        Position = null;
-      }
-      ImGui.End();
+    }
+    if (Position.HasValue) {
+      Position = null;
     }
   }
 }

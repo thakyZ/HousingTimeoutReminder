@@ -29,7 +29,7 @@ public class SettingsUI : Window, IDisposable {
   /// TODO: Write summary.
   /// </summary>
   public SettingsUI() : base(Name, WindowFlags) {
-    Size = new Vector2(630, 500) * ImGuiHelpers.GlobalScale;
+    Size = new Vector2(630, y: 500) * ImGuiHelpers.GlobalScale;
     SizeCondition = ImGuiCond.Always;
   }
 
@@ -114,14 +114,7 @@ public class SettingsUI : Window, IDisposable {
     return date;
   }
 
-  /// <summary>
-  /// TODO: Write summary.
-  /// </summary>
-  /// <param name="lastStamp"></param>
-  /// <param name="nextStamp"></param>
-  /// <param name="playerConfig"></param>
-  /// <returns></returns>
-  private (string, string) CheckConsistancy(DateTimeOffset lastStamp, DateTimeOffset nextStamp, PerPlayerConfiguration playerConfig) {
+  private (string, string) CheckConsistency(DateTimeOffset lastStamp, DateTimeOffset nextStamp) {
     if (lastStamp.ToUnixTimeSeconds() <= 946627200 && nextStamp.ToUnixTimeSeconds() <= 946627200) {
       return ("Never", "Now");
     } else if (lastStamp.ToUnixTimeSeconds() <= nextStamp.ToUnixTimeSeconds() &&
@@ -142,8 +135,8 @@ public class SettingsUI : Window, IDisposable {
   [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S3267:Loops should be simplified with \"LINQ\" expressions", Justification = "<Pending>")]
   public void DrawUserTimeoutSettings(PerPlayerConfiguration playerConfig) {
     if (ImGui.CollapsingHeader("Free Company Estate")) {
-      if (playerConfig.FreeCompanyEstate.IsValid()) {
-        var Visit = CheckConsistancy(ShortenFunction(0, playerConfig), ShortenFunction(0, playerConfig, true), playerConfig);
+      if (Services.HousingTimer.playerConfiguration.FreeCompanyEstate.IsValid()) {
+        var Visit = CheckConsistency(ShortenFunction(0), ShortenFunction(0, true));
         ImGui.Text($"Your last visit was on: {Visit.Item1}");
         ImGui.SameLine();
         ImGui.Separator();
@@ -210,8 +203,8 @@ public class SettingsUI : Window, IDisposable {
     }
 
     if (ImGui.CollapsingHeader("Private Estate")) {
-      if (playerConfig.PrivateEstate.IsValid()) {
-        var Visit = CheckConsistancy(ShortenFunction(1, playerConfig), ShortenFunction(1, playerConfig, true), playerConfig);
+      if (Services.HousingTimer.playerConfiguration.PrivateEstate.IsValid()) {
+        var Visit = CheckConsistency(ShortenFunction(1), ShortenFunction(1, true));
         ImGui.Text($"Your last visit was on: {Visit.Item1}");
         ImGui.SameLine();
         ImGui.Separator();
@@ -278,8 +271,8 @@ public class SettingsUI : Window, IDisposable {
     }
 
     if (ImGui.CollapsingHeader("Apartment")) {
-      if (playerConfig.Apartment.IsValid()) {
-        var Visit = CheckConsistancy(ShortenFunction(2, playerConfig), ShortenFunction(2, playerConfig, true), playerConfig);
+      if (Services.HousingTimer.playerConfiguration.Apartment.IsValid()) {
+        var Visit = CheckConsistency(ShortenFunction(2), ShortenFunction(2, true));
         ImGui.Text($"Your last visit was on: {Visit.Item1}");
         ImGui.SameLine();
         ImGui.Separator();
@@ -416,7 +409,17 @@ public class SettingsUI : Window, IDisposable {
     ImGui.SameLine();
     ImGui.Separator();
     ImGui.SameLine();
-
-    ImGui.End();
+    if (ImGui.Button("Reset")) {
+      Services.Instance.CheckTimers();
+      Services.Instance.IsDismissed = (false, false, false);
+    }
+#if DEBUG
+    ImGui.SameLine();
+    ImGui.Separator();
+    ImGui.SameLine();
+    if (ImGui.Button("Debug")) {
+      Services.DebugUI.IsOpen = true;
+    }
+#endif
   }
 }

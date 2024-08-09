@@ -34,9 +34,21 @@ public class Plugin : IDalamudPlugin {
   /// <summary>
   /// The Dalamud Plugin constructor.
   /// </summary>
-  /// <param name="pluginInterface">Dalamud plugin interface.</param>
-  /// <inheritdoc />
-  public Plugin(DalamudPluginInterface pluginInterface) {
+  public (bool, bool, bool) IsLate { get; set; } = (false, false, false);
+
+  /// <summary>
+  /// The return booleans if the user has dismissed the warning for the property.
+  /// <see cref="Item1"/>: The bool if player has dismissed warning for their FC House.
+  /// <see cref="Item2"/>: The bool if player has dismissed warning for their Private House.
+  /// <see cref="Item3"/>: The bool if player has dismissed warning for their Apartment.
+  /// </summary>
+  public (bool, bool, bool) IsDismissed { get; set; } = (false, false, false);
+
+  /// <summary>
+  /// The Dalamud Plugin constructor
+  /// </summary>
+  /// <param name="pluginInterface">Argument passed by Dalamud</param>
+  public Plugin(IDalamudPluginInterface pluginInterface) {
     Services.Init(pluginInterface, this);
 
     Services.CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand) {
@@ -75,7 +87,9 @@ public class Plugin : IDalamudPlugin {
       Services.WindowSystem.RemoveAllWindows();
       Services.WarningUI.Dispose();
       Services.SettingsUI.Dispose();
-      Services.XivCommon.Dispose();
+#if DEBUG
+      Services.DebugUI.Dispose();
+#endif
       Services.PluginInterface.UiBuilder.Draw -= DrawUI;
       Services.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
       Services.ClientState.TerritoryChanged -= ClientState_TerritoryChanged;
@@ -111,7 +125,6 @@ public class Plugin : IDalamudPlugin {
   /// <summary>
   /// The function to call when changing instance. Checks timers after.
   /// </summary>
-  /// <param name="sender">The object instance of the sender.</param>
   /// <param name="e">The territory ID as a ushort.</param>
   private void ClientState_TerritoryChanged(ushort e) {
     Services.HousingTimer.OnTerritoryChanged(e);
@@ -123,10 +136,27 @@ public class Plugin : IDalamudPlugin {
   /// Creates plugin config for player if it doesn't exist.
   /// Then loads the housing timer.
   /// </summary>
+  private void ClientState_Login() {
+    // Services.Config.TryUpdateBrokenNames();
+    var playerConfig = Services.Config.PlayerConfigs.Find(x => x.OwnerName == Services.ClientState.LocalPlayer?.Name.TextValue) ?? new PerPlayerConfiguration() { OwnerName = "Unknown" };
+    if (playerConfig.OwnerName == "Unknown" && Services.ClientState.LocalPlayer?.Name.TextValue is not null) {
+      Services.Config.PlayerConfigs.Add(new PerPlayerConfiguration() {
+        OwnerName = Services.ClientState.LocalPlayer?.Name.TextValue!
+      });
+    }
+    if (Services.ClientState.LocalPlayer?.Name.TextValue is not null) {
+      Services.HousingTimer.Load();
+    }
+  }
+
+  /// <summary>
+  /// The function to call when logging out.
+  /// Unloads the housing timer.
+  /// </summary>
   /// <param name="sender">The object instance of the sender.</param>
   /// <param name="e">Random unneeded event args.</param>
-  private void ClientState_Login() {
-    Services.Config.TryUpdateBrokenNames();
+  private void ClientState_Logout() {
+    Services.HousingTimer.Unload();
   }
 
   /// <summary>

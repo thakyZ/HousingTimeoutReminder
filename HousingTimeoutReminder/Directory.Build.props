@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ItemGroup>
+    <Reference Include="Serilog" HintPath="$(DalamudLibPath)\Serilog.dll" Private="False" />
+    <Reference Include="InteropGenerator.Runtime" HintPath="$(DalamudLibPath)\InteropGenerator.Runtime.dll" Private="False" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(Configuration)' == 'ILRepackTest' ">
+    <!-- These are used for the tasks in the target called "PostBuild-ILRepack" -->
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.34.1" PrivateAssets="All" IncludeAssets="Runtime;Build;Native;ContentFiles;Analyzers;BuildTransitive" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- These are used for the tasks in the target called "PreBuild-MSBuildTasks" -->
+    <PackageReference Include="MSBuildTasks" Version="1.5.0.235" PrivateAssets="All" IncludeAssets="Runtime;Build;Native;ContentFiles;Analyzers;BuildTransitive" />
+  </ItemGroup>
+
+  <!-- When the configuration is set to "Release" it will only read from the main plugin configuration file -->
+  <ItemGroup Condition=" '$(Configuration)' != 'PersonalRelease' ">
+    <Content Include="$(MSBuildProjectName).yaml" CopyToOutputDirectory="Never" />
+    <None Remove="$(MSBuildProjectName)2.yaml" />
+  </ItemGroup>
+
+  <!-- When the configuration is set to "Debug" it will only read from the development plugin configuration file -->
+  <ItemGroup Condition=" '$(Configuration)' == 'PersonalRelease' ">
+    <None Remove="$(MSBuildProjectName).yaml" />
+    <Content Include="$(MSBuildProjectName)2.yaml" CopyToOutputDirectory="Never" />
+  </ItemGroup>
+
+  <!-- Add the personal, local, SonarLint .editorconfig file to ignore common warnings -->
+  <ItemGroup Condition=" Exists('$(AppData)\MSRuleSets\sonarlint.editorconfig') ">
+    <None Include="$(AppData)\MSRuleSets\sonarlint.editorconfig" Link="sonarlint.editorconfig" />
+    <EditorConfigFiles Remove="$(AppData)\MSRuleSets\sonarlint.editorconfig" />
+  </ItemGroup>
+
+  <!-- Add the personal, local, Roslynator .editorconfig file to ignore common warnings -->
+  <ItemGroup Condition=" Exists('$(AppData)\MSRuleSets\roslynator.editorconfig') ">
+    <None Include="$(AppData)\MSRuleSets\roslynator.editorconfig" Link="roslynator.editorconfig" />
+    <EditorConfigFiles Remove="$(AppData)\MSRuleSets\roslynator.editorconfig" />
+  </ItemGroup>
+</Project>

@@ -1,9 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-	<Import Project="Dalamud.Plugin.Bootstrap.targets"/>
-
+﻿<Project Sdk="Dalamud.NET.Sdk/10.0.0">
   <PropertyGroup>
-    <Version>1.0.2.5</Version>
-    <Company></Company>
+    <Company>Neko Boi Nick</Company>
     <Authors>Neko Boi Nick</Authors>
     <Description>
       Allows any number of mounts to be enabled for the mount roulette, instead of having to choose between the
@@ -12,7 +9,36 @@
     </Description>
     <PackageProjectUrl>https://github.com/thakyZ/HousingTimeoutReminder</PackageProjectUrl>
     <Copyright></Copyright>
+    <RootNamespace>NekoBoiNick.FFXIV.DalamudPlugin.$(MSBuildProjectName)</RootNamespace>
     <Title>Housing Timeout Reminder</Title>
+    <NeutralLanguage>en-US</NeutralLanguage>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Target">
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <Platforms>$(PlatformTarget)</Platforms>
+    <Configurations>Release;Debug;ILRepackTest;PersonalRelease</Configurations>
+    <Nullable>Enable</Nullable>
+    <LangVersion>Latest</LangVersion>
+    <GenerateDependencyFile>False</GenerateDependencyFile>
+    <EnforceCodeStyleInBuild>False</EnforceCodeStyleInBuild>
+    <Configurations>Debug;Release;ILRepackTest;PersonalRelease</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Build">
+    <OutputType>Library</OutputType>
+    <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
+    <DebugSymbols>True</DebugSymbols>
+    <DebugType>Full</DebugType>
+    <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
+    <RestorePackagesWithLockFile>True</RestorePackagesWithLockFile>
+    <CopyLocalLockFileAssemblies>True</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Feature">
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <Version>1.0.2.5</Version>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -25,68 +51,110 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <Platforms>x64</Platforms>
-    <Configurations>Release;Debug</Configurations>
-    <Nullable>Enable</Nullable>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <LangVersion>Latest</LangVersion>
-    <GenerateDependencyFile>False</GenerateDependencyFile>
-    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
-    <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
-    <RestorePackagesWithLockFile>True</RestorePackagesWithLockFile>
-    <CopyLocalLockFileAssemblies>True</CopyLocalLockFileAssemblies>
-    <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
-    <RootNamespace>NekoBoiNick.FFXIV.DalamudPlugin.$(MSBuildProjectName)</RootNamespace>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
+    <DalamudLibPath>$(AppData)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <AssemblyName>$(AssemblyName)</AssemblyName>
-    <DebugSymbols>True</DebugSymbols>
-    <DebugType>Full</DebugType>
-    <Optimize>False</Optimize>
-    <OutputPath>$(ProjectDir)bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+  <PropertyGroup>
+    <AssemblyTitle>$(Title)</AssemblyTitle>
+    <Product>$(Title)</Product>
+    <PluginVersion>$(Version)</PluginVersion>
+    <FileVersion>$(Version)</FileVersion>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
+    <BuildDependsOn>
+      PreBuild-MSBuildTasks;
+      $(BuildDependsOn);
+      AfterBuild
+    </BuildDependsOn>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-    <AssemblyName>$(AssemblyName)2</AssemblyName>
-    <DebugSymbols>True</DebugSymbols>
-    <DebugType>Full</DebugType>
-    <Optimize>False</Optimize>
-    <OutputPath>$(DalamudDevPlugins)\$(MSBuildProjectName)</OutputPath>
-    <BaseOutputPath>$(DalamudDevPlugins)\$(MSBuildProjectName)</BaseOutputPath>
+    <AssemblyName>$(MSBuildProjectName)</AssemblyName>
+    <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
+    <BaseOutputPath>$(OutputPath)</BaseOutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
+    <Optimize>False</Optimize>
+    <DebugType>Full</DebugType>
+    <DebugSymbols>True</DebugSymbols>
+    <ErrorReport>Prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 
-  <ItemGroup Condition=" '$(Configuration)' == 'Debug' ">
+  <PropertyGroup Condition=" '$(Configuration)' == 'ILRepackTest' ">
+    <AssemblyName>$(MSBuildProjectName)2</AssemblyName>
+    <OutputPath>$(DalamudDevPlugins)\$(MSBuildProjectName)\</OutputPath>
+    <BaseOutputPath>$(OutputPath)</BaseOutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <Optimize>False</Optimize>
+    <DebugType>Full</DebugType>
+    <DebugSymbols>True</DebugSymbols>
+    <ErrorReport>Prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <BuildDependsOn>$(BuildDependsOn);PostBuild-ILRepack;</BuildDependsOn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'PersonalRelease' ">
+    <AssemblyName>$(MSBuildProjectName)2</AssemblyName>
+    <OutputPath>$(DalamudDevPlugins)\$(MSBuildProjectName)\</OutputPath>
+    <BaseOutputPath>$(OutputPath)</BaseOutputPath>
+    <DefineConstants>xPersonalRelease;DEBUG;TRACE</DefineConstants>
+    <Optimize>False</Optimize>
+    <DebugType>Full</DebugType>
+    <DebugSymbols>True</DebugSymbols>
+    <ErrorReport>Prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <AssemblyName>$(MSBuildProjectName)</AssemblyName>
+    <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
+    <BaseOutputPath>$(OutputPath)</BaseOutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>True</Optimize>
+    <DebugType>Full</DebugType>
+    <DebugSymbols>True</DebugSymbols>
+    <ErrorReport>Prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(Configuration)' != 'PersonalRelease' ">
     <Content Include="HousingTimeoutReminder2.yaml" CopyToOutputDirectory="Never" />
     <None Remove="HousingTimeoutReminder.yaml" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(Configuration)'=='Release'">
+  <ItemGroup Condition=" '$(Configuration)' == 'PersonalRelease' ">
     <Content Include="HousingTimeoutReminder.yaml" CopyToOutputDirectory="Never" />
     <None Remove="HousingTimeoutReminder2.yaml" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ILRepack" Version="2.0.34" GeneratePathProperty="True" />
+    <ProjectReference Include="$(SolutionDir)lib\ECommons\ECommons\ECommons.csproj" />
+    <PackageReference Include="ILRepack" Version="2.0.34" GeneratePathProperty="True" Condition=" '$(Configuration)' == 'ILRepackTest' " />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(Configuration)' != 'Release' AND '$(Configuration)' != 'Debug' ">
+    <!-- Hide the bin folder when configuration is set to "Debug" -->
+    <None Remove="$(ProjectDir)bin\**" />
+    <Compile Remove="$(ProjectDir)bin\**" />
+    <None Remove="$(ProjectDir)bin\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="$(ProjectDir)bin\**" />
-    <None Remove="$(ProjectDir)bin\**" />
-    <Folder Include="$(ProjectDir)images\" />
-    <None Include="$(SolutionDir).github\workflows\build.yml" Link="build.yml" />
+    <!-- Hide the bin folder when configuration is set to "Debug" -->
+    <!-- Add git files to the IDE -->
+    <Content Include="$(SolutionDir).gitignore" CopyToOutputDirectory="Never" />
+    <Content Include="$(SolutionDir).gitattributes" CopyToOutputDirectory="Never" />
+    <Content Include="$(SolutionDir).github\workflows\build.yml" Link="build.yml" CopyToOutputDirectory="Never" />
     <Content Include="$(SolutionDir)README.md" CopyToOutputDirectory="Never" />
     <Content Include="$(SolutionDir)LICENSE" CopyToOutputDirectory="Never" />
-    <Content Include="$(SolutionDir).gitignore" CopyToOutputDirectory="Never" />
+    <!-- Add the main .editorconfig file to the IDE -->
     <EditorConfigFiles Remove="$(SolutionDir).editorconfig" />
     <None Include="$(SolutionDir).editorconfig" Link=".editorconfig" />
+    <EditorConfigFiles Remove="$(SolutionDir)lib\.editorconfig" />
+    <None Include="$(SolutionDir)lib\.editorconfig" Link="lib\.editorconfig" />
+    <!-- Add the resources for use -->
+    <Folder Include="$(ProjectDir)images\" />
   </ItemGroup>
 
   <Target Name="CleanOutDir" AfterTargets="Build">

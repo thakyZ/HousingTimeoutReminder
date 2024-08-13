@@ -1,24 +1,44 @@
-﻿using System;
+using System;
+using Newtonsoft.Json;
 
-namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder;
+namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
+
 /// <summary>
 /// Class containing am apartment.
 /// </summary>
 [Serializable]
-public class Apartment : WardProperty {
-  /// <summary>
-  /// A boolean whether or not this Apartment is in the subdistrict of the ward.
-  /// </summary>
-  public bool Subdistrict { get; set; }
+public class Apartment : IWardProperty {
+
+  /// <inheritdoc />
+  public short Room { get; set; }
 
   /// <summary>
-  /// The Apartment number the player owns.
+  /// The Apartment plot number based off of if the apartment is in a subdistrict.
   /// </summary>
-  public ushort ApartmentNumber { get; set; }
+  public sbyte Plot { get; set; }
 
-  /// <summary>
-  /// TODO: Write summary.
-  /// </summary>
-  /// <returns></returns>
-  public override bool IsValid() { return !District.Equals(District.Unknown) && (Ward > 0) && (ApartmentNumber > 0); }
+  /// <inheritdoc />
+  public bool Enabled { get; set; }
+
+  /// <inheritdoc />
+  public long LastVisit { get; set; }
+
+  /// <inheritdoc />
+  public District District { get; set; }
+
+  /// <inheritdoc />
+  public sbyte Ward { get; set; }
+
+  /// <inheritdoc />
+  public bool IsValid() { return !District.Equals(District.Unknown) && (Ward > 0) && (Room > 0); }
+
+  /// <inheritdoc />
+  public void Reset() {
+    this.Plot = default;
+    this.Room = default;
+    this.Enabled = default;
+    this.LastVisit = default;
+    this.District = default;
+    this.Ward = default;
+  }
 }

@@ -1,13 +1,14 @@
-﻿using System;
-
+using System;
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using Newtonsoft.Json;
 
-namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder;
+namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
+
 /// <summary>
-/// TODO: Write summary.
+/// A player identification class.
 /// </summary>
 [Serializable]
-public sealed class PlayerId : IEquatable<PlayerId> {
+public sealed class PlayerID : IEquatable<PlayerID> {
   /// <summary>
   /// The first name of the player character.
   /// </summary>
@@ -33,116 +34,136 @@ public sealed class PlayerId : IEquatable<PlayerId> {
   /// The home world display name of the player character.
   /// </summary>
   [JsonIgnore]
-  public string? HomeWorldName => this.HomeWorldIsSet ? Services.GetHomeWorldFromId(this.HomeWorld) : "unknown";
+  public string? HomeWorldName => this.HomeWorldIsSet ? System.GetHomeWorldFromID(this.HomeWorld) : "unknown";
 
   /// <summary>
-  /// Gets whether this player Id property is new.
+  /// Gets whether this player identity property is new.
   /// </summary>
   [JsonIgnore]
-  public bool IsNew => this.FirstName == "Unknown" && this.LastName == "" && !this.HomeWorldIsSet;
+  public bool IsNew => this.FirstName == "Unknown" && this.LastName.Length == 0 && !this.HomeWorldIsSet;
 
   /// <summary>
-  /// TODO: Write summary.
+  /// Creates a blank instance of the class.
   /// </summary>
-  public PlayerId() {
+  public PlayerID() {
     this.FirstName = "Unknown";
     this.LastName = "";
     this.HomeWorld = uint.MaxValue;
   }
 
   /// <summary>
-  /// TODO: Write summary.
+  /// Creates an instance of the class based off of a player character instance.
   /// </summary>
-  /// <param name="firstName"></param>
-  /// <param name="lastName"></param>
-  /// <param name="homeWorld"></param>
-  public PlayerId(string firstName, string lastName, uint? homeWorld) {
+  /// <param name="player">A player character instance.</param>
+  public PlayerID(IPlayerCharacter player) {
+    var nameSplit = player.Name.TextValue.Split(' ', 2);
+    this.FirstName = nameSplit[0];
+    this.LastName = nameSplit[1];
+    this.HomeWorld = player.HomeWorld.Id;
+  }
+
+  /// <summary>
+  /// Creates an instance of the class based off of the player's
+  /// First name, last name and optionally home world.
+  /// </summary>
+  /// <param name="firstName">A player character's first name.</param>
+  /// <param name="lastName">A player character's last name.</param>
+  /// <param name="homeWorld">(Optional) A player character's home world id.</param>
+  public PlayerID(string firstName, string lastName, uint? homeWorld) {
     this.FirstName = firstName;
     this.LastName = lastName;
     this.HomeWorld = homeWorld ?? uint.MaxValue;
   }
 
   /// <summary>
-  /// TODO: Write summary.
+  /// Creates an instance of the class based off of  the player's
+  /// First name, last name and home world.
   /// </summary>
-  /// <param name="firstName"></param>
-  /// <param name="lastName"></param>
-  /// <param name="homeWorld"></param>
-  public PlayerId(string firstName, string lastName, uint homeWorld) {
+  /// <param name="firstName">A player character's first name.</param>
+  /// <param name="lastName">A player character's last name.</param>
+  /// <param name="homeWorld">(Optional) A player character's home world id.</param>
+  public PlayerID(string firstName, string lastName, uint homeWorld) {
     this.FirstName = firstName;
     this.LastName = lastName;
     this.HomeWorld = homeWorld;
   }
 
   /// <summary>
-  /// TODO: Write summary.
+  /// Creates an instance of the class based off of  the player's display name.
   /// </summary>
-  /// <param name="firstLastName"></param>
-  public PlayerId(string firstLastName) {
+  /// <param name="firstLastName">A player character's first name and last name.</param>
+  public PlayerID(string firstLastName) {
     this.FirstName = firstLastName.Split(' ')[0];
     this.LastName = firstLastName.Split(' ')[1];
     this.HomeWorld = uint.MaxValue;
   }
 
   /// <summary>
-  /// TODO: Write summary.
+  /// Transforms the instance of this class to a readable format.
   /// </summary>
-  /// <returns></returns>
+  /// <returns>A string containing "{first name} {last name}@{home world name}".</returns>
   public override string ToString() {
     return $"{this.FirstName} {this.LastName}@{this.HomeWorldName}";
   }
 
   /// <summary>
-  /// TODO: Write summary.
+  /// Compares another instance of <see cref="PlayerID" /> to this instance.
   /// </summary>
-  /// <param name="objPlayerId"></param>
-  /// <returns></returns>
-  public bool Equals(PlayerId? objPlayerId) {
-    if (objPlayerId is null) return false;
-    var homeWorldBoolean = !(this.HomeWorldIsSet && objPlayerId.HomeWorldIsSet) || this.HomeWorld == objPlayerId.HomeWorld;
-    return this.FirstName == objPlayerId.FirstName && this.LastName == objPlayerId.LastName && homeWorldBoolean;
-  }
-
-  /// <summary>
-  /// TODO: Write summary.
-  /// </summary>
-  /// <param name="strPlayerId"></param>
-  /// <returns></returns>
-  public bool Equals(string? strPlayerId) {
-    if (strPlayerId is null) return false;
-    if (!strPlayerId.Contains('@')) {
-      return $"{this.FirstName} {this.LastName}" == strPlayerId;
+  /// <param name="objPlayerID">The instance of the other PlayerId</param>
+  /// <returns>True if the equal, false otherwise.</returns>
+  public bool Equals(PlayerID? objPlayerID) {
+    if (objPlayerID is null) {
+      return false;
     }
-    return this.ToString() == strPlayerId;
+
+    bool isHomeWorld = !(this.HomeWorldIsSet && objPlayerID.HomeWorldIsSet) || this.HomeWorld == objPlayerID.HomeWorld;
+
+    return this.FirstName == objPlayerID.FirstName && this.LastName == objPlayerID.LastName && isHomeWorld;
   }
 
   /// <summary>
-  /// TODO: Write summary.
+  /// Compares an instance of a <see cref="PlayerID" />.<see cref="ToString()" /> output.
   /// </summary>
-  /// <param name="obj"></param>
-  /// <returns></returns>
+  /// <param name="strPlayerID">The other <see cref="PlayerID" />'s output of the ToString() method.</param>
+  /// <returns>True if the equal, false otherwise.</returns>
+  public bool Equals(string? strPlayerID) {
+    if (strPlayerID is null) {
+      return false;
+    }
+
+    if (!strPlayerID.Contains('@')) {
+      return $"{this.FirstName} {this.LastName}" == strPlayerID;
+    }
+
+    return this.ToString() == strPlayerID;
+  }
+
+  /// <inheritdoc />
   public override bool Equals(object? obj) {
-    if (obj is PlayerId objPlayerId) {
-      this.Equals(objPlayerId: objPlayerId);
-    } else if (obj is string strPlayerId) {
-      this.Equals(strPlayerId: strPlayerId);
+    if (obj is PlayerID objPlayerID) {
+      this.Equals(objPlayerID: objPlayerID);
+    } else if (obj is string strPlayerID) {
+      this.Equals(strPlayerID: strPlayerID);
     }
     return false;
   }
 
-  /// <summary>
-  /// TODO: Write summary.
-  /// </summary>
-  /// <returns></returns>
+  /// <inheritdoc />
   public override int GetHashCode() {
     return this.FirstName.GetHashCode() | this.LastName.GetHashCode() | this.HomeWorld.GetHashCode();
   }
 
   /// <summary>
-  /// TODO: Write summary.
+  /// Sets the home world of this instance via a nullable home world id.
   /// </summary>
-  /// <param name="homeWorld"></param>
+  /// <param name="homeWorld">A nullable home world id.</param>
   public void SetHomeWorld(uint? homeWorld) {
     this.HomeWorld = homeWorld ?? uint.MaxValue;
   }
+
+  /// <summary>
+  /// A blank <see cref="PlayerID"/> instance.
+  /// </summary>
+  public static PlayerID Blank => new();
+
 }

@@ -3,6 +3,7 @@
 using FFXIVClientStructs.FFXIV.Common.Math;
 
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder;
+
 /// <summary>
 /// The position for a window module from writable to readable.
 /// </summary>

@@ -1,11 +1,20 @@
-﻿using System;
+using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Command;
-using Dalamud.IoC;
 using Dalamud.Plugin;
 
+using ECommons;
+using ECommons.DalamudServices;
+using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
+using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler;
+
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder;
+
+// Ignore Spelling: htimeout
+
 /// <summary>
 /// The Dalamud Plugin Library
 /// </summary>
@@ -16,9 +25,8 @@ public class Plugin : IDalamudPlugin {
   internal static string StaticName = "Housing Timeout Reminder";
 
   /// <summary>
-  /// The instanced name of the plugin (required by the inherited class.
+  /// The name of the plugin.
   /// </summary>
-  /// <inheritdoc />
   public string Name => StaticName;
 
   /// <summary>
@@ -32,93 +40,73 @@ public class Plugin : IDalamudPlugin {
   public bool Testing { get; set; }
 
   /// <summary>
-  /// The Dalamud Plugin constructor.
-  /// </summary>
-  public (bool, bool, bool) IsLate { get; set; } = (false, false, false);
-
-  /// <summary>
-  /// The return booleans if the user has dismissed the warning for the property.
-  /// <see cref="Item1"/>: The bool if player has dismissed warning for their FC House.
-  /// <see cref="Item2"/>: The bool if player has dismissed warning for their Private House.
-  /// <see cref="Item3"/>: The bool if player has dismissed warning for their Apartment.
-  /// </summary>
-  public (bool, bool, bool) IsDismissed { get; set; } = (false, false, false);
-
-  /// <summary>
   /// The Dalamud Plugin constructor
   /// </summary>
   /// <param name="pluginInterface">Argument passed by Dalamud</param>
   public Plugin(IDalamudPluginInterface pluginInterface) {
-    Services.Init(pluginInterface, this);
+    System.PluginInstance = this;
 
-    Services.CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand) {
+    ECommonsMain.Init(pluginInterface, System.PluginInstance, Module.All);
+
+    System.Init();
+
+    Svc.Commands.AddHandler(CommandName, new CommandInfo(OnCommand) {
       HelpMessage = "The config menu for the housing timer reminder plugin."
     });
 
-    Services.PluginInterface.UiBuilder.Draw += DrawUI;
-    Services.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
-    Services.ClientState.TerritoryChanged += ClientState_TerritoryChanged;
-    Services.ClientState.Login += ClientState_Login;
-    if (Services.ClientState.IsLoggedIn) {
-      ClientState_Login();
+    Svc.PluginInterface.UiBuilder.Draw += DrawUI;
+    Svc.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
+    Svc.ClientState.TerritoryChanged += OnTerritoryChanged;
+    Svc.ClientState.Login += OnLogin;
+    // ReSharper disable once InvertIf
+    if (Svc.ClientState.IsLoggedIn) {
+      OnLogin();
+      OnTerritoryChanged(Svc.ClientState.TerritoryType);
     }
-    ClientState_TerritoryChanged(Services.ClientState.TerritoryType);
   }
 
   /// <summary>
   /// Dispose of the Dalamud Plugin safely.
   /// </summary>
   public void Dispose() {
-    this.Dispose(true);
-    GC.SuppressFinalize(this);
-  }
-
-  /// <summary>
-  /// Prevent disposing twice.
-  /// </summary>
-  private bool _isDisposed;
-
-  /// <summary>
-  /// Actual dispose method which is safe.
-  /// </summary>
-  /// <param name="disposing">Affirms your intention to dispose.</param>
-  protected virtual void Dispose(bool disposing) {
-    if (!_isDisposed && disposing) {
-      Services.WindowSystem.RemoveAllWindows();
-      Services.WarningUI.Dispose();
-      Services.SettingsUI.Dispose();
+    System.PluginConfig.Save();
+    System.WindowSystem.RemoveAllWindows();
+    System.WarningUI?.Dispose();
+    System.SettingsUI?.Dispose();
 #if DEBUG
-      Services.DebugUI.Dispose();
+    System.DebugUI?.Dispose();
 #endif
-      Services.PluginInterface.UiBuilder.Draw -= DrawUI;
-      Services.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
-      Services.ClientState.TerritoryChanged -= ClientState_TerritoryChanged;
-      Services.ClientState.Login -= ClientState_Login;
-      Services.CommandManager.RemoveHandler(CommandName);
-      this._isDisposed = true;
-    }
-  }
-
-  /// <summary>
-  /// Checks to see if the player configuration house types are named.
-  /// </summary>
-  /// <return>Tuple of FreeCompany, Private, Apartment.</return>
-  internal (bool FreeCompany, bool Private, bool Apartment) CheckEnabled(PerPlayerConfiguration playerConfig) {
-    return (playerConfig.FreeCompanyEstate.Enabled, playerConfig.PrivateEstate.Enabled, playerConfig.Apartment.Enabled);
+    Svc.PluginInterface.UiBuilder.Draw -= DrawUI;
+    Svc.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
+    Svc.ClientState.TerritoryChanged -= OnTerritoryChanged;
+    Svc.ClientState.Login -= OnLogin;
+    Svc.ClientState.Logout -= OnLogout;
+    Svc.Commands.RemoveHandler(CommandName);
+    ECommonsMain.Dispose();
+    GC.SuppressFinalize(this);
   }
 
   /// <summary>
   /// Checks the timers when necessary.
   /// </summary>
-  internal void CheckTimers() {
-    foreach (var playerConfig in Services.Config.PlayerConfigs) {
-      Services.HousingTimer.ManualCheckAsync(playerConfig).ContinueWith((task) => {
-        var check = CheckEnabled(playerConfig);
-        if ((playerConfig.IsLate.FreeCompany && !playerConfig.IsDismissed.FreeCompany && check.FreeCompany) || (playerConfig.IsLate.Private && !playerConfig.IsDismissed.Private && check.Private) || (playerConfig.IsLate.Apartment && !playerConfig.IsDismissed.Apartment && check.Apartment)) {
-          Services.WarningUI.ResetDismissed(playerConfig);
-          Services.WarningUI.IsOpen = true;
-        }
-      });
+  [SuppressMessage("Performance", "CA1822:Mark members as static")]
+  internal void CheckTimers(ushort? territory = null) {
+    if (territory is null && System.IsLoggedIn) {
+      territory = Svc.ClientState.TerritoryType;
+    }
+    if (territory is null) {
+      return;
+    }
+
+    foreach (var playerConfig in System.PluginConfig.PlayerConfigs.Where(playerConfig => HousingTimer.ManualCheck(playerConfig, territory.Value))) {
+      var housingTimes = HousingTimer.CheckTimes(playerConfig);
+
+      if (!housingTimes.FreeCompanyEstate && !housingTimes.PrivateEstate && !housingTimes.Apartment) {
+        continue;
+      }
+
+      System.WarningUI.ResetDismissed(playerConfig);
+      System.WarningUI.IsOpen = true;
     }
   }
 
@@ -126,9 +114,9 @@ public class Plugin : IDalamudPlugin {
   /// The function to call when changing instance. Checks timers after.
   /// </summary>
   /// <param name="e">The territory ID as a ushort.</param>
-  private void ClientState_TerritoryChanged(ushort e) {
-    Services.HousingTimer.OnTerritoryChanged(e);
-    CheckTimers();
+  private void OnTerritoryChanged(ushort e) {
+    HousingTimer.OnTerritoryChanged(e);
+    CheckTimers(e);
   }
 
   /// <summary>
@@ -136,16 +124,12 @@ public class Plugin : IDalamudPlugin {
   /// Creates plugin config for player if it doesn't exist.
   /// Then loads the housing timer.
   /// </summary>
-  private void ClientState_Login() {
+  private static void OnLogin() {
     // Services.Config.TryUpdateBrokenNames();
-    var playerConfig = Services.Config.PlayerConfigs.Find(x => x.OwnerName == Services.ClientState.LocalPlayer?.Name.TextValue) ?? new PerPlayerConfiguration() { OwnerName = "Unknown" };
-    if (playerConfig.OwnerName == "Unknown" && Services.ClientState.LocalPlayer?.Name.TextValue is not null) {
-      Services.Config.PlayerConfigs.Add(new PerPlayerConfiguration() {
-        OwnerName = Services.ClientState.LocalPlayer?.Name.TextValue!
+    if (Svc.ClientState.LocalPlayer is not null && Config.GetCurrentPlayerConfig() is null) {
+      System.PluginConfig.PlayerConfigs.Add(new PerPlayerConfig {
+        PlayerID = new PlayerID(Svc.ClientState.LocalPlayer)
       });
-    }
-    if (Services.ClientState.LocalPlayer?.Name.TextValue is not null) {
-      Services.HousingTimer.Load();
     }
   }
 
@@ -153,23 +137,21 @@ public class Plugin : IDalamudPlugin {
   /// The function to call when logging out.
   /// Unloads the housing timer.
   /// </summary>
-  /// <param name="sender">The object instance of the sender.</param>
-  /// <param name="e">Random unneeded event args.</param>
-  private void ClientState_Logout() {
-    Services.HousingTimer.Unload();
+  private static void OnLogout() {
+    // Do nothing for now.
   }
 
   /// <summary>
   /// In response to the slash command, just display our main UI
   /// </summary>
-  /// <param name="_command">The Command Name</param>
+  /// <param name="command">The Command Name</param>
   /// <param name="args">The Arguments</param>
-  private void OnCommand(string _command, string args) {
+  private void OnCommand(string command, string args) {
     var argsParsed = !string.IsNullOrEmpty(args) ? args.Split(" ", StringSplitOptions.RemoveEmptyEntries).AsEnumerable().Last().ToLower() : string.Empty;
     if (argsParsed.Equals("check")) {
       CheckTimers();
     } else {
-      Services.SettingsUI.IsOpen ^= true;
+      System.SettingsUI.IsOpen ^= true;
     }
   }
 
@@ -177,16 +159,17 @@ public class Plugin : IDalamudPlugin {
   /// Draws the UI of the plugin.
   /// </summary>
   private void DrawUI() {
-    Services.WindowSystem.Draw();
+    System.WindowSystem.Draw();
     if (Testing) {
-      Services.WarningUI.IsOpen = true;
+      System.WarningUI.IsOpen = true;
     }
   }
 
   /// <summary>
   /// Draws the UI of the settings menu of the plugin.
   /// </summary>
+  [SuppressMessage("Performance", "CA1822:Mark members as static")]
   public void DrawConfigUI() {
-    Services.SettingsUI.IsOpen = true;
+    System.SettingsUI.IsOpen = true;
   }
 }

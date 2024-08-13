@@ -16,16 +16,13 @@ env:
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           submodules: recursive
-
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1.0.3
-
       - name: Download Dalamud
         run: |
           Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/latest.zip -OutFile latest.zip
@@ -36,33 +33,30 @@ jobs:
           dotnet build --configuration Release
         env:
           DOTNET_CLI_TELEMETRY_OUTPUT: true
-
       - name: Upload artifact
         uses: actions/upload-artifact@v2.2.1
         with:
           name: ${{env.PROJECT_NAME}}
           path: ${{env.PROJECT_NAME}}/bin/Release/${{env.PROJECT_NAME}}
           if-no-files-found: error
+      - uses: notiz-dev/github-action-json-property@release
+        with:
+          path: '${{ env.RELEASE_DIR }}/${{env.PROJECT_NAME}}.json'
+          prop_path: 'AssemblyVersion'
 
-  release:
+  deploy:
     needs: build
-    runs-on: windows-latest
     if: contains(toJSON(github.event.commits.*.message), '[PUSH]') && github.event_name == 'push'
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2.2.0
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Download artifact
-        uses: actions/download-artifact@v2
-        id: download
+      - uses: actions/download-artifact@v4
         with:
-          name: ${{env.PROJECT_NAME}}
-
-      - name: Get Plugin Info
-        id: plugin_info
-        shell: pwsh
+          name: PluginRepoZip
+          path: plugins/${{ env.INTERNAL_NAME }}
+      - shell: pwsh
         run: |
           $OutContent = (Get-Content -Path "${{ env.PROJECT_NAME }}.json" | ConvertFrom-Json -Depth 100 | ConvertTo-Json -Depth 100 -Compress);
           $OutContentFinal = "PLUGIN_INFO={`"passed`":true,`"message`":`"$($OutContent -replace '"', '\"')`"}";
@@ -72,26 +66,18 @@ jobs:
             Write-Error -Message "`$OutContent Length is longer than 65535 characters. ($($OutContent.Length))";
             Exit 1
           }
-      - name: Get version
-        id: version
+      - id: version
         uses: notiz-dev/github-action-json-property@release
         with:
             path: '${{ env.PROJECT_NAME }}.json'
             prop_path: 'AssemblyVersion'
-      - shell: pwsh
-        run: |
-          Write-Host -Object "AssemblyVersion: ${{ steps.version.outputs.prop }}";
-
-      - name: Create release
-        uses: softprops/action-gh-release@v1
+      - uses: softprops/action-gh-release@v1
         with:
           name: ${{ env.PROJECT_NAME }} ${{steps.version.outputs.prop}}
           tag_name: ${{steps.version.outputs.prop}}
           body: ${{ github.event.commits[0].message }}
           files: latest.zip
-
-      - name: Trigger plugin repo update
-        uses: peter-evans/repository-dispatch@v3
+      - uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.PAT }}
           repository: ${{ env.PLUGIN_REPO }}

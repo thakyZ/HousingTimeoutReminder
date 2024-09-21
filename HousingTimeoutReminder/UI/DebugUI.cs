@@ -8,6 +8,7 @@ using ImGuiNET;
 using ECommons.DalamudServices;
 
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler;
+using ECommons;
 
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.UI;
 public class DebugUI : Window, IDisposable {
@@ -26,6 +27,7 @@ public class DebugUI : Window, IDisposable {
   public override void Draw() {
     ImGui.Text($"ImGui.GetStyle().ItemSpacing ( {ImGui.GetStyle().ItemSpacing.X}, {ImGui.GetStyle().ItemSpacing.Y} )");
     ImGui.SameLine();
+    var defaultColor = ImGui.GetColorU32(ImGuiCol.Text);
 
     if (!System.IsLoggedIn) {
       return;
@@ -39,7 +41,7 @@ public class DebugUI : Window, IDisposable {
       ImGui.TableSetColumnIndex(0);
       ImGui.Text("Is Apartment: ");
       ImGui.TableSetColumnIndex(1);
-      ImGui.TextColored(currentLocation.IsApartment ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed, currentLocation.IsApartment ? "True" : "False");
+      ImGui.TextColored(currentLocation?.IsApartment == true ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed, currentLocation?.IsApartment == true ? "True" : "False");
       ImGui.TableNextRow();
       ImGui.TableSetColumnIndex(0);
       ImGui.Text("Is Inside: ");
@@ -47,40 +49,40 @@ public class DebugUI : Window, IDisposable {
 
       Vector4 color;
 
-      if (currentLocation.IsInside.HasValue) {
+      if (currentLocation?.IsInside is not null) {
         color = currentLocation.IsInside.Value ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed;
       } else {
         color = ImGuiColors.DalamudOrange;
       }
 
-      string label = currentLocation.IsInside.HasValue ? currentLocation.IsInside.Value.ToString() : "Null";
+      string label = currentLocation?.IsInside is not null ? currentLocation.IsInside.Value.ToString() : "Null";
 
       ImGui.TextColored(color, label);
       ImGui.TableNextRow();
       ImGui.TableSetColumnIndex(0);
       ImGui.Text("Ward #: ");
       ImGui.TableSetColumnIndex(1);
-      ImGui.Text($"{currentLocation.Ward}");
+      ImGui.TextColored(currentLocation?.Ward is not null ? defaultColor.ToVector4() : ImGuiColors.DalamudRed, currentLocation?.Ward is not null ? currentLocation.Ward.ToString() : "Null");
       ImGui.TableNextRow();
       ImGui.TableSetColumnIndex(0);
       ImGui.Text("Plot #: ");
       ImGui.TableSetColumnIndex(1);
-      ImGui.Text($"{currentLocation.Plot}");
+      ImGui.TextColored(currentLocation?.Plot is not null ? defaultColor.ToVector4() : ImGuiColors.DalamudRed, currentLocation?.Plot is not null ? currentLocation.Plot.ToString() : "Null");
       ImGui.TableNextRow();
       ImGui.TableSetColumnIndex(0);
       ImGui.Text("Room #: ");
       ImGui.TableSetColumnIndex(1);
-      ImGui.Text($"{currentLocation.Room}");
+      ImGui.TextColored(currentLocation?.Room is not null ? defaultColor.ToVector4() : ImGuiColors.DalamudRed, currentLocation?.Room is not null ? currentLocation.Room.ToString() : "Null");
       ImGui.TableNextRow();
       ImGui.TableSetColumnIndex(0);
       ImGui.Text("Division: ");
       ImGui.TableSetColumnIndex(1);
-      ImGui.Text($"{currentLocation.Division}");
+      ImGui.TextColored(currentLocation?.Division is not null ? defaultColor.ToVector4() : ImGuiColors.DalamudRed, currentLocation?.Division is not null ? currentLocation.Division.ToString() : "Null");
       ImGui.TableNextRow();
       ImGui.TableSetColumnIndex(0);
       ImGui.Text("Apartment Wing: ");
       ImGui.TableSetColumnIndex(1);
-      ImGui.Text($"{currentLocation.ApartmentWing}");
+      ImGui.TextColored(currentLocation?.ApartmentWing is not null ? defaultColor.ToVector4() : ImGuiColors.DalamudRed, currentLocation?.ApartmentWing is not null ? currentLocation.ApartmentWing.ToString() : "Null");
       ImGui.EndTable();
     }
   }

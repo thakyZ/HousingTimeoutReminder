@@ -8,54 +8,87 @@ using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler;
 
 public sealed class HousingManager: IEquatable<HousingManager> {
-
+  /// <summary>
+  /// A boolean determining if the player is inside.
+  /// If this is not applicable it is null.
+  /// </summary>
   public bool? IsInside { get; }
-  public bool IsApartment { get; }
-  public int ApartmentWing {
-    get {
-      if (!IsApartment) {
-        return 0;
-      }
-
-      if (Plot == -127) {
-        return 1;
-      }
-
-      if (Plot == -126) {
-        return 2;
-      }
-
-      return 0;
-    }
-  }
+  /// <summary>
+  /// A boolean determining if the house is an apartment.
+  /// </summary>
+  public bool IsApartment => ApartmentWing != 0;
+  /// <summary>
+  /// The apartment wing. (or division)
+  /// Determines the division the house is in but only if it is an apartment.
+  /// </summary>
+  public int ApartmentWing => Plot switch { -127 => 1, -126 => 2, _ => 0, };
+  /// <summary>
+  /// The room of the apartment.
+  /// </summary>
   public short Room { get; }
+  /// <summary>
+  /// The plot the house is in.
+  /// </summary>
   public sbyte Plot { get; }
+  /// <summary>
+  /// The ward the house is in.
+  /// </summary>
   public sbyte Ward { get; }
-  public byte Division { get; }
+  /// <summary>
+  /// The division of the ward the house is in.
+  /// </summary>
+  public int Division => ApartmentWing != 0 ? ApartmentWing : (Plot > 30 ? 2 : 1);
+  /// <summary>
+  /// The housing district of the house.
+  /// </summary>
   public District District { get; }
 
-  private HousingManager(bool isApartment, short room, sbyte plot, sbyte ward, byte division, ushort district, bool? isInside = null) {
+  /// <summary>
+  /// The default constructor.
+  /// </summary>
+  /// <param name="plot">
+  ///   <para>The plot of the house.</para>
+  ///   <para>Is -176 or -177 if is an apartment.</para>
+  /// </param>
+  /// <param name="ward">The ward the house is in.</param>
+  /// <param name="district">A variable representing the housing district as an <see cref="District"/> enum.</param>
+  /// <param name="room">
+  ///   <para>The room of the apartment complex.</para>
+  ///   <para>Is 0 if is not an apartment.</para>
+  /// </param>
+  /// <param name="isInside">Optional argument if the player is inside the house.</param>
+  private HousingManager(sbyte plot, sbyte ward, District district, short room = 0, bool? isInside = null) {
     this.IsInside = isInside;
-    this.IsApartment = isApartment;
     this.Room = room;
     this.Plot = plot;
     this.Ward = ward;
-    this.Division = division;
-    this.District = ConvertToDistrict(district);
-  }
-
-  private HousingManager(bool isApartment, short room, sbyte plot, sbyte ward, byte division, District district, bool? isInside = null) {
-    this.IsInside = isInside;
-    this.IsApartment = isApartment;
-    this.Room = room;
-    this.Plot = plot;
-    this.Ward = ward;
-    this.Division = division;
     this.District = district;
   }
 
   /// <summary>
-  /// Convert the <paramref name="territory"/> to the <see cref="District"/>
+  /// The default constructor but with primitives.
+  /// </summary>
+  /// <param name="plot">
+  ///   <para>The plot of the house.</para>
+  ///   <para>Is -176 or -177 if is an apartment.</para>
+  /// </param>
+  /// <param name="ward">The ward the house is in.</param>
+  /// <param name="district">A variable representing the housing district as an ushort.</param>
+  /// <param name="room">
+  ///   <para>The room of the apartment complex.</para>
+  ///   <para>Is 0 if is not an apartment.</para>
+  /// </param>
+  /// <param name="isInside">Optional argument if the player is inside the house.</param>
+  private HousingManager(sbyte plot, sbyte ward, ushort district, short room = 0, bool? isInside = null)
+    : this(plot, ward,ConvertToDistrict(district), room, isInside) { }
+
+  /// <summary>
+  /// The default constructor.
+  /// </summary>
+  private HousingManager() : this(0, 0, 0u, 0, null) { }
+
+  /// <summary>
+  /// Convert the <paramref name="territory" /> to the <see cref="District" />
   /// </summary>
   /// <param name="territory">The ID for the territory the player is in.</param>
   /// <return>The district the player is in.</return>
@@ -70,50 +103,62 @@ public sealed class HousingManager: IEquatable<HousingManager> {
     };
   }
 
-  public static HousingManager GetCurrentLocation(ushort territory) {
+  /// <summary>
+  /// Gets a <see cref="HousingManager" /> instance for the current location.
+  /// </summary>
+  /// <param name="territory"></param>
+  /// <returns>An instanced <see cref="HousingManager" /> if at a housing plot, otherwise a <see cref="Blank" /> instance.</returns>
+  public static HousingManager? GetCurrentLocation(ushort territory) {
     try {
       unsafe {
         var manager = CSHousingManager.Instance();
         var isInside = manager->IsInside();
         short room = manager->GetCurrentRoom();
         sbyte plot = manager->GetCurrentPlot();
-        var isApartment = isInside && plot <= -127;
         sbyte ward = manager->GetCurrentWard();
-        byte division = manager->GetCurrentDivision();
-        return new HousingManager(isApartment, room, (sbyte)(plot + 1), (sbyte)(ward + 1), division, territory, isInside);
+        return new HousingManager((sbyte)(plot + 1), (sbyte)(ward + 1), territory, room, isInside);
       }
     } catch (Exception exception) {
       Svc.Log.Error(exception, "Failed to get current housing location.");
     }
-    return Blank;
+
+    return null;
   }
 
-  public static HousingManager From(PerPlayerConfig playerConfig, HousingType type) {
-    if (type == HousingType.FreeCompanyEstate && playerConfig.FreeCompanyEstate is IWardProperty fcHousingPlot) {
-      return new HousingManager(false, 0, fcHousingPlot.Plot, fcHousingPlot.Ward, fcHousingPlot.Division, fcHousingPlot.District);
-    }
+  /// <summary>
+  /// Creates a new instance of a <see cref="HousingManager" /> from a two parameters.
+  /// </summary>
+  /// <param name="playerID">The instance of a player id to fetch the player config.</param>
+  /// <param name="type">The type of house to manage.</param>
+  /// <returns>A new instance of a <see cref="HousingManager" />.</returns>
+  public static HousingManager? From(PlayerID playerID, HousingType type) {
+    var playerConfig = Config.GetPlayerConfig(playerID);
 
-    if (type == HousingType.PrivateEstate && playerConfig.PrivateEstate is IWardProperty peHousingPlot) {
-      return new HousingManager(false, 0, peHousingPlot.Plot, peHousingPlot.Ward, peHousingPlot.Division, peHousingPlot.District);
-    }
-
-    if (type == HousingType.Apartment && playerConfig.Apartment is IWardProperty apartment) {
-      return new HousingManager(true, apartment.Room, apartment.Plot, apartment.Ward, apartment.Division, apartment.District);
-    }
-
-    return Blank;
+    return type switch {
+      HousingType.FreeCompanyEstate when playerConfig.FreeCompanyEstate is IWardProperty fcHousingPlot =>
+        new HousingManager(fcHousingPlot.Plot, fcHousingPlot.Ward, fcHousingPlot.District),
+      HousingType.PrivateEstate when playerConfig.PrivateEstate is IWardProperty peHousingPlot => new HousingManager(
+        peHousingPlot.Plot, peHousingPlot.Ward, peHousingPlot.District),
+      HousingType.Apartment when playerConfig.Apartment is IWardProperty apartment => new HousingManager(apartment.Plot,
+        apartment.Ward, apartment.District, apartment.Room),
+      _ => null
+    };
   }
 
+  /// <summary>
+  /// Compares this instance of a <see cref="HousingManager"/> with another or null.
+  /// </summary>
+  /// <param name="otherManager">The other <see cref="HousingManager"/> or null</param>
+  /// <returns><see langword="true"/> if they are the same and not null, otherwise <see langword="false"/></returns>
   public bool Equals(HousingManager? otherManager) {
-      return this.IsApartment == otherManager?.IsApartment &&
-        this.ApartmentWing == otherManager.ApartmentWing &&
-        this.Room == otherManager.Room &&
+      return this.Room == otherManager?.Room &&
         this.Plot == otherManager.Plot &&
         this.Ward == otherManager.Ward &&
         this.Division == otherManager.Division &&
         (int)this.District == (int)otherManager.District;
   }
 
+  /// <inheritdoc/>
   public override bool Equals(object? obj) {
     if (obj is HousingManager otherManager) {
       return Equals(otherManager);
@@ -122,13 +167,8 @@ public sealed class HousingManager: IEquatable<HousingManager> {
     return false;
   }
 
+  /// <inheritdoc/>
   public override int GetHashCode() {
-    return HashCode.Combine(
-      this.IsApartment ? 1 : 0, this.ApartmentWing,
-      (int)this.Room, (int)this.Plot, (int)this.Ward,
-      (int)this.Division, (int)this.District
-    );
+    return HashCode.Combine((int)this.Room, (int)this.Plot, (int)this.Ward, (int)this.District);
   }
-
-  private static HousingManager Blank => new(false, 0, 0, 0, 0, 1);
 }

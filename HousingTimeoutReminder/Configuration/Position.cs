@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 
 using FFXIVClientStructs.FFXIV.Common.Math;
 
-namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder;
+namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
 
 /// <summary>
 /// The position for a window module from writable to readable.

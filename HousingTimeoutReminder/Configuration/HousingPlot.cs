@@ -1,4 +1,5 @@
 using System;
+using Newtonsoft.Json;
 
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
 /// <summary>

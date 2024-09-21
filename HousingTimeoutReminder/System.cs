@@ -57,7 +57,7 @@ public static class System {
   /// initialize another class, in the plugin constructor.
   /// </summary>
   internal static void Init() {
-    PluginConfig = Svc.PluginInterface.GetPluginConfig() as Config ?? new Config();
+    PluginConfig = (Svc.PluginInterface.GetPluginConfig() as Config ?? new Config()).Migrate();
 
     WindowSystem.AddWindow(SettingsUI);
     WindowSystem.AddWindow(WarningUI);
@@ -104,9 +104,9 @@ public static class System {
 
   /// <summary>
   /// Gets the name of a home world by an instance of an
-  /// <see cref="ExcelResolver"/> with generic type of <see cref="World"/>.
+  /// <see cref="ExcelResolver{World}"/> with generic type of <see cref="World"/>.
   /// </summary>
-  /// <param name="homeWorld">The <see cref="ExcelResolver"/> to get the
+  /// <param name="homeWorld">The <see cref="ExcelResolver{World}"/> to get the
   /// home world.</param>
   /// <returns>The name of the home world, or null if it doesn't exist
   /// (edge-case).</returns>
@@ -114,16 +114,14 @@ public static class System {
     return homeWorld.GetWithLanguage(ClientLanguage.English)?.Name.ToDalamudString().TextValue;
   }
 
+  internal static PlayerID? CachedCurrentPlayerId { get; private set; }
+
   /// <summary>Gets the current player name of the logged in character.</summary>
   /// <returns>The full name plus separator plus the home world name.
   /// If the home world is unable to be obtained it will be "unknown" instead.
   /// If the player does not exist or is not logged in it returns null.</returns>
   internal static string? GetCurrentPlayerName() {
-    if (Svc.ClientState.LocalPlayer is IPlayerCharacter player) {
-      return $"{player.Name.TextValue}@{GetHomeWorldFromID(player.HomeWorld.Id) ?? "unknown"}";
-    }
-
-    return null;
+    return GetCurrentPlayerID() is PlayerID player ? player.ToString() : null;
   }
 
   /// <summary>Gets the current player identification information.</summary>
@@ -131,7 +129,14 @@ public static class System {
   /// If the player does not exist or is not logged in it returns null.</returns>
   internal static PlayerID? GetCurrentPlayerID() {
     if (Svc.ClientState.LocalPlayer is IPlayerCharacter player) {
-      return new PlayerID(player);
+      var temp = new PlayerID(player);
+      if (CachedCurrentPlayerId != temp) {
+        CachedCurrentPlayerId = temp;
+      }
+      return temp;
+    }
+    if (CachedCurrentPlayerId is not null && IsLoggedIn) {
+      return CachedCurrentPlayerId;
     }
     return null;
   }
@@ -139,5 +144,5 @@ public static class System {
   /// <summary>
   /// Check if the user is logged into any character.
   /// </summary>
-  public static bool IsLoggedIn => Svc.ClientState.LocalPlayer is not null && Svc.ClientState.IsLoggedIn;
+  public static bool IsLoggedIn => Svc.ClientState.IsLoggedIn;
 }

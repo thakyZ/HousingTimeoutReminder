@@ -37,7 +37,7 @@ public class Plugin : IDalamudPlugin {
   /// <summary>
   /// Bool to test if repositioning the warning dialog.
   /// </summary>
-  public bool Testing { get; set; }
+  internal bool Testing { get; set; }
 
   /// <summary>
   /// The Dalamud Plugin constructor
@@ -71,10 +71,10 @@ public class Plugin : IDalamudPlugin {
   public void Dispose() {
     System.PluginConfig.Save();
     System.WindowSystem.RemoveAllWindows();
-    System.WarningUI?.Dispose();
-    System.SettingsUI?.Dispose();
+    System.WarningUI.Dispose();
+    System.SettingsUI.Dispose();
 #if DEBUG
-    System.DebugUI?.Dispose();
+    System.DebugUI.Dispose();
 #endif
     Svc.PluginInterface.UiBuilder.Draw -= DrawUI;
     Svc.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
@@ -94,20 +94,31 @@ public class Plugin : IDalamudPlugin {
     if (territory is null && System.IsLoggedIn) {
       territory = Svc.ClientState.TerritoryType;
     }
+
     if (territory is null) {
       return;
     }
 
-    foreach (var playerConfig in System.PluginConfig.PlayerConfigs.Where(playerConfig => HousingTimer.ManualCheck(playerConfig, territory.Value))) {
-      var housingTimes = HousingTimer.CheckTimes(playerConfig);
+    HousingTimer.OnTerritoryChanged(territory.Value);
+  }
 
-      if (!housingTimes.FreeCompanyEstate && !housingTimes.PrivateEstate && !housingTimes.Apartment) {
-        continue;
-      }
-
-      System.WarningUI.ResetDismissed(playerConfig);
-      System.WarningUI.IsOpen = true;
+  internal bool IsWarningToBeDisplayed(ushort? territory = null) {
+    if (territory is null && System.IsLoggedIn) {
+      territory = Svc.ClientState.TerritoryType;
     }
+
+    if (territory is null) {
+      return false;
+    }
+
+    foreach (var playerConfig in System.PluginConfig.PlayerConfigs.Where(playerConfig => playerConfig.PlayerID is not null && HousingTimer.ManualCheck(playerConfig.PlayerID, territory.Value))) {
+      if (playerConfig.IsLate.FreeCompanyEstate || playerConfig.IsLate.PrivateEstate || playerConfig.IsLate.Apartment) {
+        playerConfig.IsDismissed.Reset();
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /// <summary>
@@ -115,7 +126,6 @@ public class Plugin : IDalamudPlugin {
   /// </summary>
   /// <param name="e">The territory ID as a ushort.</param>
   private void OnTerritoryChanged(ushort e) {
-    HousingTimer.OnTerritoryChanged(e);
     CheckTimers(e);
   }
 
@@ -162,6 +172,10 @@ public class Plugin : IDalamudPlugin {
     System.WindowSystem.Draw();
     if (Testing) {
       System.WarningUI.IsOpen = true;
+    } else if (IsWarningToBeDisplayed()) {
+      System.WarningUI.IsOpen = true;
+    } else {
+      System.WarningUI.IsOpen = false;
     }
   }
 

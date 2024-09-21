@@ -14,7 +14,7 @@ public static class HousingTimer {
   /// </summary>
   /// <param name="lastVisit">The input unix time stamp.</param>
   /// <returns>The offset from the <see cref="lastVisit"/> with the amount of
-  /// days added by <see cref="System.PluginConfig.DaysToWait"/>.</returns>
+  /// days added by <see cref="Config.DaysToWait"/>.</returns>
   public static long GetOffset(long lastVisit) {
     return DateTimeOffset.FromUnixTimeSeconds(lastVisit)
       .AddDays(System.PluginConfig.DaysToWait)
@@ -24,24 +24,25 @@ public static class HousingTimer {
   /// <summary>
   /// A method to check time computations returning in a readonly struct.
   /// </summary>
-  /// <param name="playerConfig">The player config to check.</param>
+  /// <param name="playerID">The player identification to check.</param>
   /// <returns>The readonly struct containing the information.</returns>
-  public static HousingTimes CheckTimes(PerPlayerConfig playerConfig) {
+  public static HousingTimes CheckTimes(PlayerID playerID) {
+    var playerConfig = Config.GetPlayerConfig(playerID);
     if (playerConfig.PlayerID is null) {
       Svc.Log.Warning("Passed player ID into the HousingTimer.CheckTimes() method was null.");
       return HousingTimes.Blank;
     }
 
-    return new HousingTimes(playerConfig.PlayerID, (DateTimeOffset)DateTime.Now,
+    return new HousingTimes(playerConfig.PlayerID, DateTime.Now,
       GetOffset(playerConfig.FreeCompanyEstate.LastVisit),
       GetOffset(playerConfig.PrivateEstate.LastVisit),
       GetOffset(playerConfig.Apartment.LastVisit));
   }
 
   /// <summary>
-  /// <see langword="async"/> function to get if <see cref="XivCommon.Functions"/> is <see langword="null"/> or not.
+  /// The method to get if <see cref="HousingManager"/> is ready or not.
   /// </summary>
-  /// <return>Returns delayed bool until function is not <see langword="null"/>.</return>
+  /// <return><see langword="true"/> if the housing message is ready.</return>
   public static bool TestFunctionsNotNull(ushort territory) {
     return HousingManager.ConvertToDistrict(territory) != District.Unknown;
   }
@@ -53,41 +54,50 @@ public static class HousingTimer {
   /// On the Yard:
   ///     Apartment: null; ApartmentWing: null; Plot: null; Ward: 26; Yard: 53;
   /// </summary>
+  /// <param name="playerID">An player identification instance.</param>
   /// <param name="territory">The ID for the territory the player is in.</param>
   /// <return>Returns <see langword="true"/> if successful.</return>
-  public static unsafe bool CheckLocation(PerPlayerConfig playerConfig, ushort territory) {
-    var loc = HousingManager.GetCurrentLocation(territory);
-    var housingTimes = CheckTimes(playerConfig);
+  public static bool CheckLocation(PlayerID playerID, ushort territory) {
+    try {
+      var playerConfig = Config.GetPlayerConfig(playerID);
+      var loc = HousingManager.GetCurrentLocation(territory);
+      var housingTimes = CheckTimes(playerID);
+      playerConfig.UpdateLateInstance(housingTimes);
 
-    if (loc.IsApartment && playerConfig.Apartment.Enabled) {
-      var apartment = HousingManager.From(playerConfig, HousingType.Apartment);
-      if (apartment.Equals(loc) && housingTimes.Apartment) {
-        playerConfig.Apartment.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
-        Update();
-        return true;
+      if (loc?.IsApartment == true && playerConfig.Apartment.Enabled) {
+        var apartment = HousingManager.From(playerID, HousingType.Apartment);
+        if (apartment?.Equals(loc) == true  && housingTimes.Apartment) {
+          playerConfig.Apartment.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
+          Update();
+          return true;
+        }
       }
+
+      if (playerConfig.PrivateEstate.Enabled) {
+        var privateEstate = HousingManager.From(playerID, HousingType.PrivateEstate);
+        if (privateEstate?.Equals(loc) == true && housingTimes.PrivateEstate) {
+          playerConfig.PrivateEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
+          Update();
+          return true;
+        }
+      }
+
+      if (playerConfig.FreeCompanyEstate.Enabled) {
+        var freeCompanyEstate = HousingManager.From(playerID, HousingType.FreeCompanyEstate);
+        if (freeCompanyEstate?.Equals(loc) == true && housingTimes.FreeCompanyEstate) {
+          playerConfig.FreeCompanyEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
+          Update();
+          return true;
+        }
+      }
+
+      playerConfig.UpdateLateInstance(CheckTimes(playerID));
+      return true;
+    } catch (Exception exception) {
+      Svc.Log.Error(exception, "Failed to check timers.");
     }
 
-    if (playerConfig.PrivateEstate.Enabled) {
-      var privateEstate = HousingManager.From(playerConfig, HousingType.PrivateEstate);
-      if (privateEstate.Equals(loc) && housingTimes.PrivateEstate) {
-        playerConfig.PrivateEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
-        Update();
-        return true;
-      }
-    }
-
-    if (playerConfig.FreeCompanyEstate.Enabled) {
-      var freeCompanyEstate = HousingManager.From(playerConfig, HousingType.FreeCompanyEstate);
-      if (freeCompanyEstate.Equals(loc) && housingTimes.FreeCompanyEstate) {
-        playerConfig.PrivateEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
-        Update();
-        return true;
-      }
-    }
-
-    playerConfig.IsLate = CheckTimes(playerConfig);
-    return true;
+    return false;
   }
 
   /// <summary>
@@ -96,16 +106,17 @@ public static class HousingTimer {
   /// <param name="territory">The territory ID as a ushort.</param>
   public static void OnTerritoryChanged(ushort territory) {
     bool test = TestFunctionsNotNull(territory);
-    PerPlayerConfig? config = Config.GetCurrentPlayerConfig();
+    PlayerID? playerID = System.GetCurrentPlayerID();
 
-    if (test && config is not null) {
-      CheckLocation(config, territory);
+    if (test && playerID is not null) {
+      Svc.Log.Warning("test && playerID is not null");
+      CheckLocation(playerID, territory);
     }
 #if DEBUG
     Svc.Log.Debug($"TestFunctionsNotNullAsync returned {test}.");
-    Svc.Log.Debug(config is null
-      ? "GetCurrentPlayerConfig returned null."
-      : "GetCurrentPlayerConfig returned typeof PerPlayerConfig.");
+    Svc.Log.Debug(playerID is null
+      ? "GetCurrentPlayerID returned null."
+      : "GetCurrentPlayerID returned typeof PerPlayerConfig.");
 #endif
   }
 
@@ -113,13 +124,13 @@ public static class HousingTimer {
   /// Manually checks the ability to check for housing times when changing
   /// territory.
   /// </summary>
-  /// <param name="playerConfig">The player config to check for.</param>
+  /// <param name="playerID">An player identification instance.</param>
   /// <param name="territory">The territory id.</param>
   /// <returns><see langword="true"/> if successful and ready,
   /// otherwise <see langword="false"/>.</returns>
-  public static bool ManualCheck(PerPlayerConfig playerConfig, ushort territory) {
+  public static bool ManualCheck(PlayerID playerID, ushort territory) {
     try {
-      return TestFunctionsNotNull(territory) && CheckLocation(playerConfig, territory);
+      return TestFunctionsNotNull(territory) && CheckLocation(playerID, territory);
     } catch (OperationCanceledException operationCanceledException) {
       Svc.Log.Error(operationCanceledException, "Error when waiting for task to complete.");
       return false;

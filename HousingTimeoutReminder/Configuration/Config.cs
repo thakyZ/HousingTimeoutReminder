@@ -1,25 +1,24 @@
-﻿using System;
-using System.Collections;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
-
 using Dalamud.Configuration;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin;
-
 using ECommons.DalamudServices;
-using ECommons.GameHelpers;
-using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
-namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder;
+namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
 /// <summary>
 /// The main plugin configuration file.
 /// </summary>
 [Serializable]
 public class Config : IPluginConfiguration {
+  internal const int CurrentVersion = 1;
+
   /// <summary>
   /// The version of the Configuration.
   /// </summary>
@@ -43,7 +42,7 @@ public class Config : IPluginConfiguration {
   /// <summary>
   /// The position of the warning dialog on the screen.
   /// </summary>
-  public Position WarningPosition { get; set; } = new Position();
+  public Position WarningPosition { get; set; } = new();
 
   /// <summary>
   /// Shows warnings for all players regardless of who is logged in.
@@ -61,59 +60,10 @@ public class Config : IPluginConfiguration {
   /// </summary>
   public static PerPlayerConfig? GetPlayerConfiguration() {
     if (Svc.ClientState.LocalPlayer is IPlayerCharacter player) {
-      return System.PluginConfig.PlayerConfigs.Find(x => x.OwnerName == player.Name.TextValue);
+      return System.PluginConfig.PlayerConfigs.Find(x => x.PlayerID?.FirstLastName == player.Name.TextValue);
     }
 
     return null;
-  }
-
-  /// <summary>
-  /// Migrates the older config versions to newer ones.
-  /// </summary>
-  [SuppressMessage("Major Code Smell", "S907:\"goto\" statement should not be used", Justification = "Per Compiler Error CS0163")]
-  public void Migrate() {
-    switch (this.Version) {
-      case 0:
-        Svc.Log.Verbose("Migrating from v0.");
-        this.MigrateToV1();
-        goto default;
-      case 1:
-        Svc.Log.Verbose("Migrated from v1.");
-        goto default;
-      default:
-        Svc.Log.Info("Migrated Config.");
-        this.TryUpdateBrokenNames();
-        return;
-    }
-  }
-
-  /// <summary>
-  /// A wrapper function to migrate from version 0 to version 1 of the config.
-  /// </summary>
-  public void MigrateToV1() {
-    for (int index = 0; index < this.PlayerConfigs.Count; index++) {
-      if (this.PlayerConfigs[index].OwnerName is string ownerName && this.PlayerConfigs[index].PlayerID is null) {
-        if (System.IsLoggedIn) {
-          var playerName = System.GetCurrentPlayerName();
-          if (playerName is not null && ownerName == playerName.Split('@')[0]) {
-            this.PlayerConfigs[index].PlayerID = System.GetCurrentPlayerID();
-            this.PlayerConfigs[index].OwnerName = null;
-          } else {
-            this.PlayerConfigs[index].PlayerID = new PlayerID(ownerName);
-            this.PlayerConfigs[index].OwnerName = null;
-          }
-        } else {
-          this.PlayerConfigs[index].PlayerID = new PlayerID(ownerName);
-          this.PlayerConfigs[index].OwnerName = null;
-        }
-      } else if (this.PlayerConfigs[index].OwnerName == "Unknown" && this.PlayerConfigs[index].PlayerID is null) {
-        this.PlayerConfigs.RemoveAt(index);
-      } else if (this.PlayerConfigs[index].IsBroken) {
-        this.PlayerConfigs.RemoveAt(index);
-      }
-    }
-    this.Version = 1;
-    this.Save();
   }
 
   /// <summary>
@@ -177,13 +127,13 @@ public class Config : IPluginConfiguration {
   }
 
   /// <summary>
-  /// Adds a new <see cref="PerPlayerConfig"/> to the player config list,
+  /// Adds a new <see cref="PerPlayerConfig" /> to the player config list,
   /// from the currently logged in player.
   /// </summary>
   /// <returns>Returns the same new player config, else returns null if
   /// the player is not logged in.</returns>
   internal static PerPlayerConfig? AddNewPlayerFromCurrent() {
-    if (System.GetCurrentPlayerID() is not { } playerID) {
+    if (System.GetCurrentPlayerID() is not PlayerID playerID) {
       return null;
     }
 
@@ -193,13 +143,13 @@ public class Config : IPluginConfiguration {
   }
 
   /// <summary>
-  /// Gets the <see cref="PerPlayerConfig"/> from a matching <see cref="PlayerID">,
+  /// Gets the <see cref="PerPlayerConfig" /> from a matching <see cref="PlayerID" />,
   /// if the player config doesn't exist it will create abstract new one from
   /// the current player config.
   /// </summary>
   /// <returns>Returns a player config for the current player config.</returns>
   internal static PerPlayerConfig? GetCurrentPlayerConfig() {
-    if (System.GetCurrentPlayerID() is { } playerID) {
+    if (System.GetCurrentPlayerID() is PlayerID playerID) {
       return System.PluginConfig.PlayerConfigs.Find(x => x.PlayerID?.Equals(playerID) == true) ?? AddNewPlayerFromCurrent();
     }
 
@@ -207,7 +157,7 @@ public class Config : IPluginConfiguration {
   }
 
   /// <summary>
-  /// Adds a new <see cref="PerPlayerConfig"/> to the player config list,
+  /// Adds a new <see cref="PerPlayerConfig" /> to the player config list,
   /// from a player identification.
   /// </summary>
   /// <param name="playerID">A player identification.</param>
@@ -220,7 +170,7 @@ public class Config : IPluginConfiguration {
   }
 
   /// <summary>
-  /// Gets the <see cref="PerPlayerConfig"/> from a matching <see cref="PlayerID">,
+  /// Gets the <see cref="PerPlayerConfig" /> from a matching <see cref="PlayerID" />,
   /// if the player config doesn't exist it will create abstract new one from
   /// the current player config.
   /// </summary>
@@ -230,33 +180,86 @@ public class Config : IPluginConfiguration {
     return System.PluginConfig.PlayerConfigs.Find(x => x.PlayerID?.Equals(playerID) == true) ?? AddNewPlayerConfig(playerID);
   }
 
+  [JsonExtensionData]
+  [SuppressMessage("Roslynator", "RCS1169")]
+  private IDictionary<string, JToken>? _additionalData = null;
+
+  [OnDeserialized]
+  private void OnDeserialized(StreamingContext context)
+  {
+    if (_additionalData is null) {
+#if DEBUG
+      Svc.Log.Warning("Config _additionalData is null");
+#endif
+      return;
+    }
+  }
+}
+
+public static class ConfigExtensions {
+  /// <summary>
+  /// Migrates the older config versions to newer ones.
+  /// </summary>
+  public static Config Migrate(this Config config) {
+    if (config.Version == Config.CurrentVersion) return config;
+
+    while (config.Version < Config.CurrentVersion) {
+      switch (config.Version) {
+        case 0:
+          Svc.Log.Verbose("Migrating from v0.");
+          config = config.MigrateToV1().TryUpdateBrokenNames().Migrate();
+          break;
+        case 1:
+          Svc.Log.Verbose("Migrated from v1.");
+          break;
+      }
+    }
+    Svc.Log.Info("Migrated Config.");
+    return config;
+  }
+
+  /// <summary>
+  /// A wrapper function to migrate from version 0 to version 1 of the config.
+  /// </summary>
+  public static Config MigrateToV1(this Config config) {
+    /*for (int index = 0; index < config.PlayerConfigs.Count; index++) {
+      switch (config.PlayerConfigs[index].OwnerName)
+      {
+        case string ownerName when config.PlayerConfigs[index].PlayerID is null:
+          if (System.IsLoggedIn) {
+            var playerID = System.GetCurrentPlayerID();
+            config.PlayerConfigs[index].PlayerID = playerID ?? new PlayerID(ownerName);
+          } else {
+            config.PlayerConfigs[index].PlayerID = new PlayerID(ownerName);
+          }
+          config.PlayerConfigs[index].OwnerName = null;
+          break;
+        case null when config.PlayerConfigs[index].PlayerID is null:
+          config.PlayerConfigs.RemoveAt(index);
+          break;
+        default:
+          if (config.PlayerConfigs[index].IsBroken) {
+            config.PlayerConfigs.RemoveAt(index);
+          }
+          break;
+      }
+    }*/
+    config.Version = 1;
+    return config;
+  }
+
   /// <summary>
   /// Tries to upgrade old config names.
-  /// TODO: Actually make this work.
   /// </summary>
-  internal void TryUpdateBrokenNames() {
-    if (System.GetCurrentPlayerID() is not { } playerID) {
-      return;
+  internal static Config TryUpdateBrokenNames(this Config config) {
+    if (System.GetCurrentPlayerID() is not PlayerID playerID) {
+      return config;
     }
-
-    var playerConfig = System.PluginConfig.PlayerConfigs.Find(x => x.PlayerID?.Equals(playerID) == true);
-    var updateFromOld = false;
-
-    if (playerConfig is null) {
-      playerConfig = System.PluginConfig.PlayerConfigs.Find(x => playerID.Equals(x.OwnerName));
-      updateFromOld = true;
+    if (config.PlayerConfigs.Exists(x => x.PlayerID is not null && x.PlayerID.HomeWorld is null) != true) {
+      return config;
     }
-
-    if (playerConfig is null) {
-      return;
-    }
-
-    if (System.IsLoggedIn) {
-      if (updateFromOld) {
-        MigrateToV1();
-      }
-    } else if (playerConfig.IsBroken) {
-      Svc.Log.Error("Player config is broken.");
-    }
+    int index = config.PlayerConfigs.FindIndex(x => x.PlayerID is not null && x.PlayerID.HomeWorld is null);
+    config.PlayerConfigs[index].PlayerID = playerID;
+    return config;
   }
 }

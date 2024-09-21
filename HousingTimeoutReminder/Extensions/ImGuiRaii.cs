@@ -1,16 +1,13 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 using Dalamud.Interface.Utility;
 
 using ImGuiNET;
 
-using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler;
-
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Extensions;
 
-public static class ImGuiRaii {
+public static partial class ImGuiRaii {
   /// <summary>
   /// Borrowed from: <see href="https://github.com/NotNite/DistantSeas/blob/f91788220c6a153a2691331c7d0347cd6930cf3f/DistantSeas/Utils.cs#L66"/>
   /// </summary>

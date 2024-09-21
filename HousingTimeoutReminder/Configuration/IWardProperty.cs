@@ -1,4 +1,10 @@
+using ECommons.DalamudServices;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Serialization;
+
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
 
@@ -34,14 +40,22 @@ public interface IWardProperty {
   /// <summary>
   /// A boolean whether or not this Apartment is in the subdistrict of the ward.
   /// </summary>
+
   [JsonIgnore]
-  public bool IsSubdistrict => Plot == -127;
+  public bool IsSubdistrict => SubdistrictID switch { 1 => true, 2 => false, _ => false, };
+
+  /// <summary>
+  /// The specific subdistrict the house is in.
+  /// </summary>
+
+  [JsonIgnore]
+  public byte SubdistrictID => Plot switch { -127 => 1, -126 => 2, _ => 0, };
 
   /// <summary>
   /// The specific division the house is in.
   /// </summary>
   [JsonIgnore]
-  public byte Division => (byte)(IsSubdistrict || Plot > 30 ? 1 : 2);
+  public byte Division => SubdistrictID != 0 ? SubdistrictID : (byte)(Plot > 30 ? 2 : 1);
 
   /// <summary>
   /// The specific ward the property is in.

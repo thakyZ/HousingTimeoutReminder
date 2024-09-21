@@ -1,6 +1,14 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Serialization;
+
 using Dalamud.Game.ClientState.Objects.SubKinds;
+
+using ECommons.DalamudServices;
+
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
 
@@ -12,44 +20,38 @@ public sealed class PlayerID : IEquatable<PlayerID> {
   /// <summary>
   /// The first name of the player character.
   /// </summary>
-  public string FirstName { get; set; }
+  public string? FirstName { get; set; }
 
   /// <summary>
   /// The last name of the player character.
   /// </summary>
-  public string LastName { get; set; }
+  public string? LastName { get; set; }
 
   /// <summary>
   /// The home world ID of the player character
   /// </summary>
-  public uint HomeWorld { get; set; }
+  [MemberNotNullWhen(true, nameof(HomeWorldIsSet))]
+  public uint? HomeWorld { get; set; }
 
   /// <summary>
   /// Gets whether the home world ID is properly set.
   /// </summary>
   [JsonIgnore]
-  public bool HomeWorldIsSet => this.HomeWorld != uint.MaxValue;
+  public bool HomeWorldIsSet => this.HomeWorld.HasValue;
 
   /// <summary>
   /// The home world display name of the player character.
   /// </summary>
   [JsonIgnore]
-  public string? HomeWorldName => this.HomeWorldIsSet ? System.GetHomeWorldFromID(this.HomeWorld) : "unknown";
+  public string? HomeWorldName => this.HomeWorldIsSet ? System.GetHomeWorldFromID(this.HomeWorld) : null;
 
-  /// <summary>
-  /// Gets whether this player identity property is new.
-  /// </summary>
   [JsonIgnore]
-  public bool IsNew => this.FirstName == "Unknown" && this.LastName.Length == 0 && !this.HomeWorldIsSet;
+  public string FirstLastName => $"{this.FirstName} {this.LastName}";
 
   /// <summary>
   /// Creates a blank instance of the class.
   /// </summary>
-  public PlayerID() {
-    this.FirstName = "Unknown";
-    this.LastName = "";
-    this.HomeWorld = uint.MaxValue;
-  }
+  public PlayerID() {}
 
   /// <summary>
   /// Creates an instance of the class based off of a player character instance.
@@ -69,10 +71,10 @@ public sealed class PlayerID : IEquatable<PlayerID> {
   /// <param name="firstName">A player character's first name.</param>
   /// <param name="lastName">A player character's last name.</param>
   /// <param name="homeWorld">(Optional) A player character's home world id.</param>
-  public PlayerID(string firstName, string lastName, uint? homeWorld) {
+  public PlayerID(string firstName, string lastName, uint? homeWorld = null) {
     this.FirstName = firstName;
     this.LastName = lastName;
-    this.HomeWorld = homeWorld ?? uint.MaxValue;
+    this.HomeWorld = homeWorld;
   }
 
   /// <summary>
@@ -81,7 +83,7 @@ public sealed class PlayerID : IEquatable<PlayerID> {
   /// </summary>
   /// <param name="firstName">A player character's first name.</param>
   /// <param name="lastName">A player character's last name.</param>
-  /// <param name="homeWorld">(Optional) A player character's home world id.</param>
+  /// <param name="homeWorld">A player character's home world id.</param>
   public PlayerID(string firstName, string lastName, uint homeWorld) {
     this.FirstName = firstName;
     this.LastName = lastName;
@@ -95,7 +97,7 @@ public sealed class PlayerID : IEquatable<PlayerID> {
   public PlayerID(string firstLastName) {
     this.FirstName = firstLastName.Split(' ')[0];
     this.LastName = firstLastName.Split(' ')[1];
-    this.HomeWorld = uint.MaxValue;
+    this.HomeWorld = null;
   }
 
   /// <summary>
@@ -109,61 +111,88 @@ public sealed class PlayerID : IEquatable<PlayerID> {
   /// <summary>
   /// Compares another instance of <see cref="PlayerID" /> to this instance.
   /// </summary>
-  /// <param name="objPlayerID">The instance of the other PlayerId</param>
+  /// <param name="object">The instance of the other PlayerId</param>
   /// <returns>True if the equal, false otherwise.</returns>
-  public bool Equals(PlayerID? objPlayerID) {
-    if (objPlayerID is null) {
+  public bool Equals(PlayerID? @object) {
+    if (@object is null) {
       return false;
     }
 
-    bool isHomeWorld = !(this.HomeWorldIsSet && objPlayerID.HomeWorldIsSet) || this.HomeWorld == objPlayerID.HomeWorld;
-
-    return this.FirstName == objPlayerID.FirstName && this.LastName == objPlayerID.LastName && isHomeWorld;
+    return this.FirstName == @object.FirstName && this.LastName == @object.LastName && this.HomeWorld == @object.HomeWorld;
   }
 
   /// <summary>
   /// Compares an instance of a <see cref="PlayerID" />.<see cref="ToString()" /> output.
   /// </summary>
-  /// <param name="strPlayerID">The other <see cref="PlayerID" />'s output of the ToString() method.</param>
+  /// <param name="string">The other <see cref="PlayerID" />'s output of the ToString() method.</param>
   /// <returns>True if the equal, false otherwise.</returns>
-  public bool Equals(string? strPlayerID) {
-    if (strPlayerID is null) {
+  public bool Equals(string? @string) {
+    if (@string is null) {
       return false;
     }
 
-    if (!strPlayerID.Contains('@')) {
-      return $"{this.FirstName} {this.LastName}" == strPlayerID;
+    if (!@string.Contains('@')) {
+      return $"{this.FirstName} {this.LastName}" == @string;
     }
 
-    return this.ToString() == strPlayerID;
+    return this.ToString() == @string;
   }
 
   /// <inheritdoc />
   public override bool Equals(object? obj) {
-    if (obj is PlayerID objPlayerID) {
-      this.Equals(objPlayerID: objPlayerID);
-    } else if (obj is string strPlayerID) {
-      this.Equals(strPlayerID: strPlayerID);
-    }
-    return false;
+    return obj switch {
+      PlayerID @object => this.Equals(@object: @object),
+      string @string => this.Equals(@string: @string),
+      _ => false
+    };
   }
 
   /// <inheritdoc />
   public override int GetHashCode() {
-    return this.FirstName.GetHashCode() | this.LastName.GetHashCode() | this.HomeWorld.GetHashCode();
+    return HashCode.Combine(this.FirstName?.GetHashCode(), this.LastName?.GetHashCode(), this.HomeWorld?.GetHashCode());
   }
 
   /// <summary>
   /// Sets the home world of this instance via a nullable home world id.
   /// </summary>
-  /// <param name="homeWorld">A nullable home world id.</param>
-  public void SetHomeWorld(uint? homeWorld) {
-    this.HomeWorld = homeWorld ?? uint.MaxValue;
+  /// <param name="newHomeWorld">A nullable home world id.</param>
+  public void SetHomeWorld(uint? newHomeWorld) {
+    this.HomeWorld = newHomeWorld ?? uint.MaxValue;
   }
 
-  /// <summary>
-  /// A blank <see cref="PlayerID"/> instance.
-  /// </summary>
-  public static PlayerID Blank => new();
+  public static bool operator ==(PlayerID? objA, object? objB) {
+    if (objA is null) {
+      return objB is null;
+    }
+    if (objB is PlayerID idB) {
+      return objA.Equals(idB);
+    }
+    return false;
+  }
 
+  public static bool operator !=(PlayerID? objA, object? objB) {
+    return !(objA == objB);
+  }
+
+  [JsonExtensionData]
+  [SuppressMessage("Roslynator", "RCS1169")]
+  private IDictionary<string, JToken>? _additionalData = null;
+
+  [OnDeserialized]
+  private void OnDeserialized(StreamingContext context)
+  {
+    if (_additionalData is null) {
+#if DEBUG
+      Svc.Log.Warning("PlayerID _additionalData is null");
+#endif
+      return;
+    }
+
+#if DEBUG
+    Svc.Log.Info($"_additionalData.Count: {_additionalData.Count}");
+    foreach (string key in _additionalData.Keys) {
+      Svc.Log.Info($"key: {key}");
+    }
+#endif
+  }
 }

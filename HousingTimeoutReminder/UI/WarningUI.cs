@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics.CodeAnalysis;
 
 using Dalamud.Interface.Utility;
@@ -48,7 +48,7 @@ public class WarningUI : Window, IDisposable {
   /// <summary>
   /// Caching the old position when repositioning the locked window.
   /// </summary>
-  private Vector2 oldPostion = Vector2.Zero;
+  private Vector2 _oldPostion = Vector2.Zero;
 
   // cSpell:ignore thicc
   /// <summary>
@@ -62,65 +62,68 @@ public class WarningUI : Window, IDisposable {
 
     this.BgAlpha = 0.5f;
 
-    if (oldPostion.Equals(ImGui.GetWindowPos())) {
+    if (_oldPostion.Equals(ImGui.GetWindowPos())) {
       return;
     }
 
-    System.PluginConfig.WarningPosition = HousingTimeoutReminder.Position.FromVector2(ImGui.GetWindowPos());
-    oldPostion = ImGui.GetWindowPos();
+    System.PluginConfig.WarningPosition = Configuration.Position.FromVector2(ImGui.GetWindowPos());
+    _oldPostion = ImGui.GetWindowPos();
   }
 
   /// <summary>
-  /// Reset all dismissed all dismissed instances in a <see cref="PerPlayerConfig">.
-  /// </summary>
-  /// <param name="playerConfig">An instance of a <see cref="PerPlayerConfig">.</param>
-  [SuppressMessage("Performance", "CA1822:Mark members as static")]
-  public void ResetDismissed(PerPlayerConfig playerConfig) {
-    playerConfig.IsDismissed.Reset();
-  }
-
-  /// <summary>
-  /// Displays a warning for the player of a <see cref="PerPlayerConfig">.
+  /// Displays a warning for the player of a <see cref="PerPlayerConfig" />.
   /// </summary>
   /// <param name="type">The type of housing to display.</param>
-  /// <param name="playerConfig">An instance of a <see cref="PerPlayerConfig">.</param>
+  /// <param name="playerConfig">An instance of a <see cref="PerPlayerConfig" />.</param>
   [SuppressMessage("Performance", "CA1822:Mark members as static")]
   public void DisplayForPlayer(HousingType type, PerPlayerConfig playerConfig) {
-    if (type == HousingType.FreeCompanyEstate) {
-      var dateTimeOffset = (DateTimeOffset)DateTime.Now;
-      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfig.FreeCompanyEstate.LastVisit);
-      var pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
-      ImGui.Text($"Your Free Company Estate has not been visited in, {pastDays} days.");
-      ImGui.Text("You can dismiss this at the button below.");
-      if (ImGui.Button("Dismiss")) {
-        playerConfig.IsDismissed.FreeCompanyEstate = true;
-      }
-    } else if (type == HousingType.PrivateEstate) {
-      var dateTimeOffset = (DateTimeOffset)DateTime.Now;
-      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfig.PrivateEstate.LastVisit);
-      var pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
-      ImGui.Text($"Your Private Estate has not been visited in, {pastDays} days.");
-      ImGui.Text("You can dismiss this at the button below.");
-      if (ImGui.Button("Dismiss")) {
-        playerConfig.IsDismissed.PrivateEstate = true;
-      }
-    } else if (type == HousingType.Apartment) {
-      var dateTimeOffset = (DateTimeOffset)DateTime.Now;
-      var dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfig.Apartment.LastVisit);
-      var pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
-      ImGui.Text($"Your Apartment has not been visited in, {pastDays} days.");
-      ImGui.Text("You can dismiss this at the button below.");
-      if (ImGui.Button("Dismiss")) {
-        playerConfig.IsDismissed.Apartment = true;
-      }
+    DateTimeOffset dateTimeOffset = DateTime.Now;
+    DateTimeOffset dateTimeOffsetLast;
+    int pastDays;
+    switch (type)
+    {
+      case HousingType.FreeCompanyEstate:
+        dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfig.FreeCompanyEstate.LastVisit);
+        pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
+        ImGui.Text($"Your Free Company Estate has not been visited in, {pastDays} days.");
+        ImGui.Text("You can dismiss this at the button below.");
+        if (ImGui.Button("Dismiss")) {
+          playerConfig.IsDismissed.FreeCompanyEstate = true;
+        }
+
+        break;
+      case HousingType.PrivateEstate:
+        dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfig.PrivateEstate.LastVisit);
+        pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
+        ImGui.Text($"Your Private Estate has not been visited in, {pastDays} days.");
+        ImGui.Text("You can dismiss this at the button below.");
+        if (ImGui.Button("Dismiss")) {
+          playerConfig.IsDismissed.PrivateEstate = true;
+        }
+
+        break;
+      case HousingType.Apartment:
+        dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfig.Apartment.LastVisit);
+        pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
+        ImGui.Text($"Your Apartment has not been visited in, {pastDays} days.");
+        ImGui.Text("You can dismiss this at the button below.");
+        if (ImGui.Button("Dismiss")) {
+          playerConfig.IsDismissed.Apartment = true;
+        }
+
+        break;
+      case HousingType.Unknown:
+        throw new ArgumentOutOfRangeException(nameof(type), type, null);
+      default:
+        throw new ArgumentOutOfRangeException(nameof(type), type, null);
     }
   }
 
   /// <summary>
-  /// Displays a warning for the player of a <see cref="PerPlayerConfig">.
+  /// Displays a warning for the player of a <see cref="PerPlayerConfig" />.
   /// </summary>
   /// <param name="type">The type of housing to display.</param>
-  /// <param name="playerConfig">An instance of a <see cref="PerPlayerConfig">.</param>
+  /// <param name="playerConfig">An instance of a <see cref="PerPlayerConfig" />.</param>
   /// <returns><see langword="true"/> if successfully drawn otherwise <see langword="false"/>.</returns>
   public bool DrawWarning(HousingType type, PerPlayerConfig playerConfig) {
     bool state = type switch {
@@ -136,7 +139,7 @@ public class WarningUI : Window, IDisposable {
 
     this.BgAlpha = 0.5f;
     Flags = WindowFlags;
-    Position = HousingTimeoutReminder.Position.ToVector2(System.PluginConfig.WarningPosition);
+    Position = Configuration.Position.ToVector2(System.PluginConfig.WarningPosition);
     DisplayForPlayer(type, playerConfig);
     return true;
   }

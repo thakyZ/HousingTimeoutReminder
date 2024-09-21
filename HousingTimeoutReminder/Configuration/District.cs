@@ -3,9 +3,8 @@ using System.ComponentModel;
 
 using System.Linq;
 using System.Reflection;
-using ECommons;
 
-namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder;
+namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
 /// <summary>
 /// Enum detailing the different districts
 /// </summary>

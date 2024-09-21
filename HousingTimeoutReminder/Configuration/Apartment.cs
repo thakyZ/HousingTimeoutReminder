@@ -1,5 +1,11 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Serialization;
+using ECommons;
+using ECommons.DalamudServices;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
 
@@ -8,7 +14,6 @@ namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
 /// </summary>
 [Serializable]
 public class Apartment : IWardProperty {
-
   /// <inheritdoc />
   public short Room { get; set; }
 
@@ -40,5 +45,28 @@ public class Apartment : IWardProperty {
     this.LastVisit = default;
     this.District = default;
     this.Ward = default;
+  }
+
+  [JsonExtensionData]
+  [SuppressMessage("Roslynator", "RCS1169")]
+  private IDictionary<string, JToken>? _additionalData = null;
+
+  [OnDeserialized]
+  private void OnDeserialized(StreamingContext context)
+  {
+    if (_additionalData is null) {
+#if DEBUG
+      Svc.Log.Warning("Apartment _additionalData is null");
+#endif
+      return;
+    }
+
+    if (_additionalData.TryGetValue("Subdistrict", out var value) && value.NotNull(out JToken token) && token.Value<bool>() is bool @bool) {
+      this.Plot = (sbyte)(@bool ? -126 : -127);
+    }
+
+    if (_additionalData.TryGetValue("ApartmentNumber", out var _value) && _value.NotNull(out JToken _token) && _token.Value<int>() is int @int) {
+      this.Room = (short)@int;
+    }
   }
 }

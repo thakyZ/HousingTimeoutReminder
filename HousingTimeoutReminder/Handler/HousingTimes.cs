@@ -12,39 +12,39 @@ public readonly struct HousingTimes {
   /// <summary>
   /// The instance of a <see cref="PlayerID"/>
   /// </summary>
-  private readonly PlayerID playerID;
+  private readonly PlayerID? _playerID;
 
   /// <summary>
-  /// Gets the instance of a <see cref="PerPlayerConfig"/> from this struct's <see cref="playerID"/>.
+  /// Gets the instance of a <see cref="PerPlayerConfig"/> from this struct's <see cref="_playerID"/>.
   /// </summary>
-  private readonly PerPlayerConfig playerConfig => Config.GetPlayerConfig(playerID);
+  private PerPlayerConfig? PlayerConfig => _playerID is not null ? Config.GetPlayerConfig(_playerID) : null;
 
   private readonly bool _freeCompanyEstate = false;
   /// <summary>
   /// A bool specifying if the player's Free Company estate is past the
   /// check date.
   /// </summary>
-  public bool FreeCompanyEstate => playerConfig.FreeCompanyEstate.Enabled && _freeCompanyEstate;
+  public bool FreeCompanyEstate => PlayerConfig?.FreeCompanyEstate.Enabled == true && _freeCompanyEstate;
 
-  public readonly bool _privateEstate = false;
+  private readonly bool _privateEstate = false;
   /// <summary>
   /// A bool specifying if the player's private estate is past the
   /// check date.
   /// </summary>
-  public bool PrivateEstate => playerConfig.PrivateEstate.Enabled && _privateEstate;
+  public bool PrivateEstate => PlayerConfig?.PrivateEstate.Enabled == true && _privateEstate;
 
-  public readonly bool _apartment = false;
+  private readonly bool _apartment = false;
   /// <summary>
   /// A bool specifying if the player's apartment is past the
   /// check date.
   /// </summary>
-  public bool Apartment => playerConfig.Apartment.Enabled && _apartment;
+  public bool Apartment => PlayerConfig?.Apartment.Enabled == true && _apartment;
 
   /// <summary>
   /// The constructor of this struct.
   /// </summary>
   public HousingTimes(PlayerID playerID, DateTimeOffset current, long freeCompanyAfter,  long peAfter, long apAfter) {
-    this.playerID = playerID;
+    this._playerID = playerID;
     long currentUnixTime = current.ToUnixTimeSeconds();
     this._freeCompanyEstate = currentUnixTime > freeCompanyAfter;
     this._privateEstate     = currentUnixTime > peAfter;
@@ -56,7 +56,6 @@ public readonly struct HousingTimes {
   /// For use with <see cref="Blank"/>
   /// </summary>
   private HousingTimes(bool @default = true) {
-    this.playerID = PlayerID.Blank;
     this._freeCompanyEstate = @default;
     this._privateEstate     = @default;
     this._apartment         = @default;

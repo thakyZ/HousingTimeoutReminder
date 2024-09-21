@@ -54,8 +54,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
-          name: PluginRepoZip
-          path: plugins/${{ env.INTERNAL_NAME }}
+          name: ${{env.PROJECT_NAME}}
       - shell: pwsh
         run: |
           $OutContent = (Get-Content -Path "${{ env.PROJECT_NAME }}.json" | ConvertFrom-Json -Depth 100 | ConvertTo-Json -Depth 100 -Compress);

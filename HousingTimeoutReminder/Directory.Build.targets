@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+	<ItemGroup>
+		<OriginalFiles      Include="$(ProjectDir)Plugin.cs" />
+		<BackupFiles        Include="$(ProjectDir)Plugin.cs.bak" />
+		<BackupOrignalFiles Include="$(ProjectDir)Plugin.cs.bak.bak" />
+	</ItemGroup>
+	<Target Name="PreBuild-Template" BeforeTargets="CoreResGen">
+		<XmlRead Prefix="n" Namespace="http://schemas.microsoft.com/developer/msbuild/2003" XPath="/Project/PropertyGroup/Title/text()" XmlFileName="$(ProjectDir)$(MSBuildProjectName).csproj">
+			<Output TaskParameter="Value" PropertyName="PluginTitle" />
+		</XmlRead>
+		<Message Text="Plugin Title: $(PluginTitle)" />
+		<XmlRead Prefix="n" Namespace="http://schemas.microsoft.com/developer/msbuild/2003" XPath="/Project/PropertyGroup/Authors/text()" XmlFileName="$(ProjectDir)$(MSBuildProjectName).csproj">
+			<Output TaskParameter="Value" PropertyName="PluginAuthors" />
+		</XmlRead>
+		<Message Text="Plugin Authors: [ $(PluginAuthors) ]" />
+		<ItemGroup>
+			<Tokens Include="Title">
+				<ReplacementValue>$(PluginTitle)</ReplacementValue>
+			</Tokens>
+			<Tokens Include="Authors">
+				<ReplacementValue>$(PluginAuthors)</ReplacementValue>
+			</Tokens>
+		</ItemGroup>
+		<Copy SourceFiles="@(OriginalFiles);@(OriginalFiles)" DestinationFiles="@(BackupFiles);@(BackupOrignalFiles)" />
+		<TemplateFile Template="@(BackupFiles)" OutputFilename="@(OriginalFiles)" Tokens="@(Tokens)" />
+		<OnError ExecuteTargets="Reset-PreBuildTasks" />
+	</Target>
+
+	<Target Name="Reset-PreBuildTasks" AfterTargets="PostBuild">
+		<Delete Files="@(OriginalFiles);@(BackupFiles)" />
+		<Move SourceFiles="@(BackupOrignalFiles)" DestinationFiles="@(OriginalFiles)" />
+	</Target>
+
+	<Target Name="PostBuild" AfterTargets="Build"></Target>
+
+	<Target Name="ILRepacker" BeforeTargets="CleanOutDir" Condition=" '$(Configuration)' == 'ILRepackTest' ">
+    <ItemGroup>
+			<InputAssemblies Include="$(TargetPath)" />
+			<InputAssemblies Include="$(TargetDir)*.dll" Exclude="$(TargetPath)" />
+    </ItemGroup>
+    <ItemGroup>
+        <!-- Must be a fully qualified name -->
+        <DoNotInternalizeAssemblies Include="ExampleAssemblyToMerge3" />
+    </ItemGroup>
+    <ILRepack
+      Union="True"
+      Internalize="True"
+      InternalizeExclude="@(DoNotInternalizeAssemblies)"
+      LibraryPath="$(DalamudLibPath)"
+      InputAssemblies="@(InputAssemblies)"
+      TargetKind="Dll"
+      OutputFile="$(TargetPath)"/>
+		<ItemGroup>
+			<CleanAssemblies Include="$(TargetDir)*.dll" Exclude="$(TargetPath)" />
+		</ItemGroup>
+		<Delete Files="@(CleanAssemblies)" />
+	</Target>
+
+	<Target Name="CleanOutDir" AfterTargets="PostBuild">
+		<ItemGroup>
+			<DeleteAssemblies Include="$(TargetDir)$(AssemblyName).deps.json" />
+		</ItemGroup>
+		<Message Text="Deleting @(DeleteAssemblies)" Importance="high" />
+		<Delete Files="@(DeleteAssemblies)" />
+		<RemoveDir Directories="$(TargetDir)ref\" />
+		<RemoveDir Directories="$(TargetDir)runtimes\" />
+	</Target>
+</Project>

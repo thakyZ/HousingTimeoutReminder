@@ -3,5 +3,6 @@
         "Empyreum",
         "htimeout",
         "Shirogane"
-    ]
+    ],
+    "editor.inlayHints.enabled": "off"
 }

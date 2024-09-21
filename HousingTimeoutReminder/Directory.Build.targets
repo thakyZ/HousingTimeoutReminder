@@ -29,7 +29,7 @@
 
 	<Target Name="Reset-PreBuildTasks" AfterTargets="PostBuild">
 		<Delete Files="@(OriginalFiles);@(BackupFiles)" />
-		<Move SourceFiles="@(BackupOrignalFiles)" DestinationFiles="@(OriginalFiles)" />
+		<Move Condition="Exists(@(BackupOrignalFiles))" SourceFiles="@(BackupOrignalFiles)" DestinationFiles="@(OriginalFiles)" />
 	</Target>
 
 	<Target Name="PostBuild" AfterTargets="Build"></Target>

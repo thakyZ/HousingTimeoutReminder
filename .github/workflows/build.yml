@@ -29,8 +29,8 @@ jobs:
           Expand-Archive -Force latest.zip "$env:AppData\XIVLauncher\addon\Hooks\dev\"
       - name: Build
         run: |
-          dotnet restore -r win ${{ env.PROJECT_NAME }}.sln
-          dotnet build --configuration Release
+          nuget restore ${{ env.PROJECT_NAME }}.sln
+          msbuild ${{ env.PROJECT_NAME }}.sln -p:Configuration=Release
         env:
           DOTNET_CLI_TELEMETRY_OUTPUT: true
       - name: Upload artifact

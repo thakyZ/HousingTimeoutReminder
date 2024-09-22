@@ -37,7 +37,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{env.PROJECT_NAME}}
-          path: ${{env.PROJECT_NAME}}/bin/Release/${{env.PROJECT_NAME}}
+          path: bin/Release/${{env.PROJECT_NAME}}
           if-no-files-found: error
       - uses: notiz-dev/github-action-json-property@release
         with:

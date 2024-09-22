@@ -6,7 +6,7 @@
       AssemblyName="$(AssemblyName)"
       ManifestType="yaml"
       MakeZip="True"
-      Include="$(AssemblyName).dll;$(AssemblyName).json;$(AssemblyName).pdb"/>
+      Include="$(AssemblyName).dll;$(AssemblyName).json;$(AssemblyName).pdb;ECommons.dll;ECommons.pdb"/>
   </Target>
   <Target Name="PackagePluginDebug" AfterTargets="PostBuild" Condition=" '$(Configuration)' != 'Release' ">
     <DalamudPackager ProjectDir="$(ProjectDir)"
@@ -14,6 +14,6 @@
       AssemblyName="$(AssemblyName)"
       ManifestType="yaml"
       MakeZip="False"
-      Include="$(AssemblyName).dll;$(AssemblyName).json;$(AssemblyName).pdb"/>
+      Include="$(AssemblyName).dll;$(AssemblyName).json;$(AssemblyName).pdb;ECommons.dll;ECommons.pdb"/>
   </Target>
 </Project>

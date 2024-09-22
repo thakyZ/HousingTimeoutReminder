@@ -41,7 +41,7 @@ jobs:
           if-no-files-found: error
       - uses: notiz-dev/github-action-json-property@release
         with:
-          path: '${{ env.RELEASE_DIR }}/${{env.PROJECT_NAME}}.json'
+          path: 'bin/Release/${{env.PROJECT_NAME}}/${{env.PROJECT_NAME}}.json'
           prop_path: 'AssemblyVersion'
 
   deploy:
@@ -58,7 +58,6 @@ jobs:
           path: plugins/${{ env.INTERNAL_NAME }}
       - shell: pwsh
         run: |
-          Get-ChildItem -Path $PWD
           $OutContent = (Get-Content -Path "${{ env.PROJECT_NAME }}.json" | ConvertFrom-Json -Depth 100 | ConvertTo-Json -Depth 100 -Compress);
           $OutContentFinal = "PLUGIN_INFO={`"passed`":true,`"message`":`"$($OutContent -replace '"', '\"')`"}";
           If ($OutContent.Length -le 65535) {

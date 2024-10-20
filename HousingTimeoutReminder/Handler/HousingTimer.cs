@@ -16,27 +16,7 @@ public static class HousingTimer {
   /// <returns>The offset from the <see cref="lastVisit"/> with the amount of
   /// days added by <see cref="Config.DaysToWait"/>.</returns>
   public static long GetOffset(long lastVisit) {
-    return DateTimeOffset.FromUnixTimeSeconds(lastVisit)
-      .AddDays(System.PluginConfig.DaysToWait)
-      .ToUnixTimeSeconds();
-  }
-
-  /// <summary>
-  /// A method to check time computations returning in a readonly struct.
-  /// </summary>
-  /// <param name="playerID">The player identification to check.</param>
-  /// <returns>The readonly struct containing the information.</returns>
-  public static HousingTimes CheckTimes(PlayerID playerID) {
-    var playerConfig = Config.GetPlayerConfig(playerID);
-    if (playerConfig.PlayerID is null) {
-      Svc.Log.Warning("Passed player ID into the HousingTimer.CheckTimes() method was null.");
-      return HousingTimes.Blank;
-    }
-
-    return new HousingTimes(playerConfig.PlayerID, DateTime.Now,
-      GetOffset(playerConfig.FreeCompanyEstate.LastVisit),
-      GetOffset(playerConfig.PrivateEstate.LastVisit),
-      GetOffset(playerConfig.Apartment.LastVisit));
+    return DateTimeOffset.FromUnixTimeSeconds(lastVisit).AddDays(System.PluginConfig.DaysToWait).ToUnixTimeSeconds();
   }
 
   /// <summary>
@@ -61,12 +41,10 @@ public static class HousingTimer {
     try {
       var playerConfig = Config.GetPlayerConfig(playerID);
       var loc = HousingManager.GetCurrentLocation(territory);
-      var housingTimes = CheckTimes(playerID);
-      playerConfig.UpdateLateInstance(housingTimes);
 
       if (loc?.IsApartment == true && playerConfig.Apartment.Enabled) {
         var apartment = HousingManager.From(playerID, HousingType.Apartment);
-        if (apartment?.Equals(loc) == true  && housingTimes.Apartment) {
+        if (apartment?.Equals(loc) == true) {
           playerConfig.Apartment.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
           Update();
           return true;
@@ -75,7 +53,7 @@ public static class HousingTimer {
 
       if (playerConfig.PrivateEstate.Enabled) {
         var privateEstate = HousingManager.From(playerID, HousingType.PrivateEstate);
-        if (privateEstate?.Equals(loc) == true && housingTimes.PrivateEstate) {
+        if (privateEstate?.Equals(loc) == true) {
           playerConfig.PrivateEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
           Update();
           return true;
@@ -84,14 +62,12 @@ public static class HousingTimer {
 
       if (playerConfig.FreeCompanyEstate.Enabled) {
         var freeCompanyEstate = HousingManager.From(playerID, HousingType.FreeCompanyEstate);
-        if (freeCompanyEstate?.Equals(loc) == true && housingTimes.FreeCompanyEstate) {
+        if (freeCompanyEstate?.Equals(loc) == true) {
           playerConfig.FreeCompanyEstate.LastVisit = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
           Update();
           return true;
         }
       }
-
-      playerConfig.UpdateLateInstance(CheckTimes(playerID));
       return true;
     } catch (Exception exception) {
       Svc.Log.Error(exception, "Failed to check timers.");

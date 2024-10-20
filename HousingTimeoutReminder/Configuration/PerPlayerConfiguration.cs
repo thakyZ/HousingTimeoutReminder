@@ -73,8 +73,18 @@ public class PerPlayerConfig : IInterface {
   /// <summary>
   /// The return booleans if the user hasn't visited their property in the days set.
   /// </summary>
-  [JsonIgnore]
-  public HousingTimes IsLate { get; private set; } = HousingTimes.Blank;
+  public bool IsLate(HousingType housingType) {
+    var lastVisit = housingType switch {
+      HousingType.FreeCompanyEstate => this.FreeCompanyEstate.LastVisit,
+      HousingType.PrivateEstate => this.PrivateEstate.LastVisit,
+      HousingType.Apartment => this.Apartment.LastVisit,
+      _ => -1
+    };
+    if (lastVisit == -1) {
+      return false;
+    }
+    return DateTimeOffset.FromUnixTimeSeconds(lastVisit).AddDays(System.PluginConfig.DaysToWait).ToUnixTimeSeconds() >= DateTimeOffset.Now.ToUnixTimeSeconds();
+  }
 
   /// <summary>
   /// The return booleans if the user hasn't visited their property in the days set.
@@ -100,12 +110,8 @@ public class PerPlayerConfig : IInterface {
     return type switch {
       HousingType.FreeCompanyEstate => this.FreeCompanyEstate,
       HousingType.PrivateEstate => this.PrivateEstate,
-      _ => this.Apartment
+      _ => this.Apartment,
     };
-  }
-
-  internal void UpdateLateInstance(HousingTimes timers) {
-    this.IsLate = timers;
   }
 
   [JsonExtensionData]

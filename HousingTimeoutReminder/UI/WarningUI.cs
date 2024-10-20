@@ -1,11 +1,8 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
-
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
-
 using FFXIVClientStructs.FFXIV.Common.Math;
-
 using ImGuiNET;
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler;
@@ -113,9 +110,9 @@ public class WarningUI : Window, IDisposable {
 
         break;
       case HousingType.Unknown:
-        throw new ArgumentOutOfRangeException(nameof(type), type, null);
       default:
-        throw new ArgumentOutOfRangeException(nameof(type), type, null);
+        this.IsOpen = false;
+        break;
     }
   }
 
@@ -127,12 +124,11 @@ public class WarningUI : Window, IDisposable {
   /// <returns><see langword="true"/> if successfully drawn otherwise <see langword="false"/>.</returns>
   public bool DrawWarning(HousingType type, PerPlayerConfig playerConfig) {
     bool state = type switch {
-      HousingType.FreeCompanyEstate => playerConfig.IsLate.FreeCompanyEstate && !playerConfig.IsDismissed.FreeCompanyEstate,
-      HousingType.PrivateEstate => playerConfig.IsLate.PrivateEstate && !playerConfig.IsDismissed.PrivateEstate,
-      HousingType.Apartment => playerConfig.IsLate.Apartment && !playerConfig.IsDismissed.Apartment,
-      _ => false
+      HousingType.FreeCompanyEstate => !playerConfig.IsDismissed.FreeCompanyEstate,
+      HousingType.PrivateEstate =>!playerConfig.IsDismissed.PrivateEstate,
+      HousingType.Apartment => !playerConfig.IsDismissed.Apartment,
+      _ => false,
     };
-
     if (!state) {
       return false;
     }
@@ -141,7 +137,7 @@ public class WarningUI : Window, IDisposable {
     Flags = WindowFlags;
     Position = Configuration.Position.ToVector2(System.PluginConfig.WarningPosition);
     DisplayForPlayer(type, playerConfig);
-    return true;
+    return false;
   }
 
   /// <summary>
@@ -156,18 +152,14 @@ public class WarningUI : Window, IDisposable {
 
   /// <inheritdoc />
   public override void Draw() {
-    if (System.PluginInstance.Testing) {
+    if (System.PluginInstance.Repositioning) {
       DrawRepositioning();
     }
 
     if (System.IsLoggedIn && Config.GetCurrentPlayerConfig() is PerPlayerConfig playerConfig) {
-      if (DrawWarning(HousingType.FreeCompanyEstate, playerConfig)) {
-        // Do nothing for now.
-      } else if (DrawWarning(HousingType.PrivateEstate, playerConfig)) {
-        // Do nothing for now.
-      } else if (DrawWarning(HousingType.Apartment, playerConfig)) {
-        // Do nothing for now.
-      }
+      IsOpen = DrawWarning(HousingType.FreeCompanyEstate, playerConfig)
+            || DrawWarning(HousingType.PrivateEstate, playerConfig)
+            || DrawWarning(HousingType.Apartment, playerConfig);
     }
     if (Position.HasValue) {
       Position = null;

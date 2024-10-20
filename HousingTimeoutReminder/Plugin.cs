@@ -37,7 +37,7 @@ public class Plugin : IDalamudPlugin {
   /// <summary>
   /// Bool to test if repositioning the warning dialog.
   /// </summary>
-  internal bool Testing { get; set; }
+  internal bool Repositioning { get; set; }
 
   /// <summary>
   /// The Dalamud Plugin constructor
@@ -111,14 +111,7 @@ public class Plugin : IDalamudPlugin {
       return false;
     }
 
-    foreach (var playerConfig in System.PluginConfig.PlayerConfigs.Where(playerConfig => playerConfig.PlayerID is not null && HousingTimer.ManualCheck(playerConfig.PlayerID, territory.Value))) {
-      if (playerConfig.IsLate.FreeCompanyEstate || playerConfig.IsLate.PrivateEstate || playerConfig.IsLate.Apartment) {
-        playerConfig.IsDismissed.Reset();
-        return true;
-      }
-    }
-
-    return false;
+    return System.PluginConfig.PlayerConfigs.Any(playerConfig => playerConfig.PlayerID is not null && HousingTimer.ManualCheck(playerConfig.PlayerID, territory.Value) && (playerConfig.IsLate(HousingType.FreeCompanyEstate) || playerConfig.IsLate(HousingType.PrivateEstate) || playerConfig.IsLate(HousingType.Apartment)));
   }
 
   /// <summary>
@@ -170,7 +163,7 @@ public class Plugin : IDalamudPlugin {
   /// </summary>
   private void DrawUI() {
     System.WindowSystem.Draw();
-    if (Testing) {
+    if (Repositioning) {
       System.WarningUI.IsOpen = true;
     } else if (IsWarningToBeDisplayed()) {
       System.WarningUI.IsOpen = true;

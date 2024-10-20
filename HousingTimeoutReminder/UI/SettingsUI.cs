@@ -410,10 +410,10 @@ public class SettingsUI : Window, IDisposable {
     ImGui.Text("Reposition");
     ImGui.SameLine();
 
-    var isTesting = System.PluginInstance.Testing;
+    var isTesting = System.PluginInstance.Repositioning;
 
     if (ImGui.Checkbox("##isTesting", ref isTesting)) {
-      System.PluginInstance.Testing = isTesting;
+      System.PluginInstance.Repositioning = isTesting;
     }
 
     ImGuiRaii.VerticalSeparator();

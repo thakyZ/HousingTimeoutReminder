@@ -7,6 +7,25 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HousingTimeoutReminder", "H
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ECommons", "lib\ECommons\ECommons\ECommons.csproj", "{13C812E9-0D42-4B95-8646-40EEBF306370}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".root", ".root", "{A92276CE-D399-40BC-95C3-FD79A5C6C0DB}"
+	ProjectSection(SolutionItems) = preProject
+		.\.github = .\.github
+		.\.vscode = .\.vscode
+		.\.editorconfig = .\.editorconfig
+		.\.gitattributes = .\.gitattributes
+		.\.gitignore = .\.gitignore
+		.\.gitmodules = .\.gitmodules
+		.\HousingTimeoutReminder.sln.DotSettings = .\HousingTimeoutReminder.sln.DotSettings
+		.\HousingTimeoutReminder.sln.DotSettings.user = .\HousingTimeoutReminder.sln.DotSettings.user
+		.\LICENSE = .\LICENSE
+		.\README.md = .\README.md
+		.\HousingTimeoutReminder\Dalamud.Plugin.Bootstrap.targets = .\HousingTimeoutReminder\Dalamud.Plugin.Bootstrap.targets
+		.\HousingTimeoutReminder\DalamudPackager.targets = .\HousingTimeoutReminder\DalamudPackager.targets
+		.\HousingTimeoutReminder\Directory.Build.props = .\HousingTimeoutReminder\Directory.Build.props
+		.\HousingTimeoutReminder\Directory.Build.targets = .\HousingTimeoutReminder\Directory.Build.targets
+		.\HousingTimeoutReminder\packages.lock.json = .\HousingTimeoutReminder\packages.lock.json
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64

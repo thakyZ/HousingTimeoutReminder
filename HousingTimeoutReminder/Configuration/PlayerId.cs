@@ -61,7 +61,7 @@ public sealed class PlayerID : IEquatable<PlayerID> {
     var nameSplit = player.Name.TextValue.Split(' ', 2);
     this.FirstName = nameSplit[0];
     this.LastName = nameSplit[1];
-    this.HomeWorld = player.HomeWorld.Id;
+    this.HomeWorld = player.HomeWorld.RowId;
   }
 
   /// <summary>

@@ -140,7 +140,7 @@ public class Plugin : IDalamudPlugin {
   /// The function to call when logging out.
   /// Unloads the housing timer.
   /// </summary>
-  private static void OnLogout() {
+  private static void OnLogout(int type, int code) {
     // Do nothing for now.
   }
 

@@ -14,7 +14,7 @@ using ECommons;
 using ECommons.DalamudServices;
 
 using Lumina.Excel;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler;
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.UI;
@@ -74,8 +74,8 @@ public static class System {
   /// <returns>
   /// The row of the specified sheet, or null if that row does not exist.
   /// </returns>
-  private static T? GetSheetAtRow<T>(uint rowID) where T : ExcelRow {
-    return Svc.Data.GetExcelSheet<T>()?.FirstOrDefault(x => x.RowId == rowID);
+  private static T? GetSheetAtRow<T>(uint rowID) where T : struct, IExcelRow<T> {
+    return Svc.Data.GetExcelSheet<T>(ClientLanguage.English).FirstOrDefault(x => x.RowId == rowID);
   }
 
   /// <summary>
@@ -85,7 +85,7 @@ public static class System {
   /// <returns>The name of the home world, or null if it doesn't exist
   /// (edge-case).</returns>
   internal static string? GetHomeWorldFromID(uint homeWorld) {
-    return GetSheetAtRow<World>(homeWorld)?.Name.ToDalamudString().TextValue;
+    return GetSheetAtRow<World>(homeWorld)?.Name.ExtractText();
   }
 
   /// <summary>
@@ -99,19 +99,7 @@ public static class System {
       return null;
     }
 
-    return GetSheetAtRow<World>(homeWorld.Value)?.Name.ToDalamudString().TextValue;
-  }
-
-  /// <summary>
-  /// Gets the name of a home world by an instance of an
-  /// <see cref="ExcelResolver{World}"/> with generic type of <see cref="World"/>.
-  /// </summary>
-  /// <param name="homeWorld">The <see cref="ExcelResolver{World}"/> to get the
-  /// home world.</param>
-  /// <returns>The name of the home world, or null if it doesn't exist
-  /// (edge-case).</returns>
-  internal static string? GetHomeWorldFromID(ExcelResolver<World> homeWorld) {
-    return homeWorld.GetWithLanguage(ClientLanguage.English)?.Name.ToDalamudString().TextValue;
+    return GetSheetAtRow<World>(homeWorld.Value)?.Name.ExtractText();
   }
 
   internal static PlayerID? CachedCurrentPlayerId { get; private set; }

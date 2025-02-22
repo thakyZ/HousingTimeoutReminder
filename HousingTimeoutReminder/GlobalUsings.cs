@@ -1,0 +1,12 @@
+﻿global using System;
+global using System.Collections.Generic;
+global using System.Diagnostics;
+global using System.Diagnostics.CodeAnalysis;
+global using NumericsVector2 = System.Numerics.Vector2;
+global using CSVector2 = FFXIVClientStructs.FFXIV.Common.Math.Vector2;
+global using ECommons.DalamudServices;
+global using PluginConfig = NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration.Data.Config;
+global using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Extensions;
+global using District = NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Extensions.District;
+global using Vector2 = NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Extensions.Vector2;
+global using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler;

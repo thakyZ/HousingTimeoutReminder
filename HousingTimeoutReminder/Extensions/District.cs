@@ -1,6 +1,6 @@
-using System.ComponentModel;
+using System.Linq;
 
-namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder;
+namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Extensions;
 
 public enum District {
   Unknown = 0,
@@ -10,6 +10,7 @@ public enum District {
   Empyreum = 4,
   Shirogane = 5,
 }
+
 public static class DistrictEnumHelper {
   public static string GetName(this District district) {
     return district switch {
@@ -21,4 +22,7 @@ public static class DistrictEnumHelper {
       _                     => "INVALID CONFIG",
     };
   }
+
+  public static (string, District)[] GetNames()
+    => [..Enum.GetValues<District>().Where(x => x != District.Unknown).Select(x => (x.GetName(), x))];
 }

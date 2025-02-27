@@ -1,8 +1,11 @@
 ﻿using System.Linq;
+using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
+using FFXIVClientStructs.FFXIV.Common.Configuration;
 using ImGuiNET;
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration.Data;
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration.Data.Houses;
@@ -16,6 +19,9 @@ public class SettingsWindow : Window, IDisposable {
   /// TODO: make this customizable.
   /// </summary>
   private const string _DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
+  private string? CurrentlySelectedOtherPlayerName => _currentlySelectedOtherPlayer?.DisplayName;
+  private PlayerConfigEntry? _currentlySelectedOtherPlayer;
 
   /// <summary>
   /// Gets a <see langword="string" /> that represents the name of with <see cref="Window" />.
@@ -128,6 +134,7 @@ public class SettingsWindow : Window, IDisposable {
             bool isSubDistrict = playerHousing.IsSubDistrict;
 
             if (ImGui.Checkbox($"##{type}IsSubDistrict-{playerId}", ref isSubDistrict)) {
+              // NOTE: to self from 2025-22-02 this is flipped for some reason.
               playerHousing.Plot = (sbyte)(isSubDistrict ? -127 : -126);
             }
           }
@@ -209,6 +216,10 @@ public class SettingsWindow : Window, IDisposable {
     }
   }
 
+  /// <summary>
+  /// Draws the global settings tab.
+  /// </summary>
+  /// <returns><see langword="true" /> upon successfully drawn; otherwise <see langword="false"/></returns>
   private bool DrawGlobalTab() {
     try {
       // ReSharper disable once SuggestVarOrType_SimpleTypes
@@ -242,6 +253,10 @@ public class SettingsWindow : Window, IDisposable {
     return true;
   }
 
+  /// <summary>
+  /// Draws the current player settings tab.
+  /// </summary>
+  /// <returns><see langword="true" /> upon successfully drawn; otherwise <see langword="false"/></returns>
   private bool DrawCurrentPlayerTab() {
     try {
       // ReSharper disable once SuggestVarOrType_SimpleTypes
@@ -262,12 +277,50 @@ public class SettingsWindow : Window, IDisposable {
     return true;
   }
 
+  /// <summary>
+  /// Draws the other players settings tab.
+  /// </summary>
+  /// <returns><see langword="true" /> upon successfully drawn; otherwise <see langword="false"/></returns>
   private bool DrawOtherPlayersTab() {
     try {
       // ReSharper disable once SuggestVarOrType_SimpleTypes
       using var scrolling = ImRaii.Child($"scrolling##HousingTimeoutReminder-{nameof(DrawOtherPlayersTab)}", ImGuiHelpers.ScaledVector2(0, -(25 + ImGui.GetStyle().ItemSpacing.Y)), false);
       if (!scrolling.Success) {
-        return true;
+        return false;
+      }
+
+      if (ImGui.BeginCombo("Select Character: ", this.CurrentlySelectedOtherPlayerName ?? "NONE")) {
+        foreach (var entry in Plugin.Systems.Config.PlayerConfigEntries.Where(config => !config.IsCurrentPlayer).Select(x => x.ConfigEntry)) {
+          bool isCurrentlySelected = this._currentlySelectedOtherPlayer?.Equals(entry) == true;
+          if (ImGui.Selectable(entry.DisplayName, ref isCurrentlySelected)) {
+            if (!isCurrentlySelected) {
+              this._currentlySelectedOtherPlayer = entry;
+            }
+          }
+        }
+      }
+
+      ImGui.SameLine();
+
+      if (ImGuiComponents.IconButton(FontAwesomeIcon.Plus)) {
+        PlayerConfigEntry? newEntry = null;
+        if (AddPlayerWindow.Draw($"Add User###{Plugin.InternalName}-{nameof(SettingsWindow)}-AddUserWindow", null, ref newEntry)) {
+
+        }
+      }
+      ImGuiRaii.Tooltip("Add User");
+
+      ImGui.SameLine();
+
+      if (ImGuiComponents.IconButton(FontAwesomeIcon.Trash)) {
+
+      }
+      ImGuiRaii.Tooltip("Delete");
+
+      if (this._currentlySelectedOtherPlayer is PlayerConfigEntry current) {
+
+      } else {
+        ImGui.Text("Please select a player to configure.");
       }
 
 #if DEBUG
@@ -278,7 +331,7 @@ public class SettingsWindow : Window, IDisposable {
       foreach (var entry in Plugin.Systems.Config.PlayerEntries.Where(config => !config.IsCurrentPlayer).Select(x => x.ConfigEntry)) {
         using ImRaii.IEndObject header = ImRaii.TreeNode($"Housing Configuration for {entry.DisplayName}", ImGuiTreeNodeFlags.Framed | ImGuiTreeNodeFlags.SpanAvailWidth | ImGuiTreeNodeFlags.NoTreePushOnOpen);
 
-        if (!header.Success || Plugin.Systems.PlayerManager.LoadPlayerConfig(entry) is not PlayerConfig playerConfig) {
+        if (!header.Success || Plugin.Systems.Config.PlayerConfigEntries[entry] is not PlayerConfig playerConfig) {
           continue;
         }
 
@@ -286,16 +339,16 @@ public class SettingsWindow : Window, IDisposable {
         DrawUserTimeoutSettings(playerConfig, entry, ScaledIndent5);
         ImGui.Indent(-ScaledIndent5);
       }
+
+      return true;
     } catch (Exception ex) {
       Svc.Log.Error(ex, nameof(DrawOtherPlayersTab));
-      return false;
     }
-    return true;
+    return false;
   }
 
   /// <inheritdoc />
   public override void Draw() {
-    Svc.Log.Verbose("Drawing {0}.", SettingsWindowName);
     try {
       try {
         // ReSharper disable once SuggestVarOrType_SimpleTypes
@@ -342,12 +395,14 @@ public class SettingsWindow : Window, IDisposable {
       }
 
       if (ImGui.Button("Save")) {
+        PluginConfig.SavePlayerConfigs();
         PluginConfig.Save();
       }
 
       ImGui.SameLine();
 
       if (ImGui.Button("Save and close")) {
+        PluginConfig.SavePlayerConfigs();
         PluginConfig.Save();
         this.IsOpen = false;
       }

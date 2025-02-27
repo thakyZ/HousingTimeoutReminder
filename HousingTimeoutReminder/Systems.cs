@@ -1,7 +1,10 @@
+using System.Linq;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using ECommons;
+using ECommons.ExcelServices;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Data;
 using Lumina.Excel.Sheets;
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
@@ -36,7 +39,7 @@ internal sealed class Systems : IDisposable {
            SUBCOMMANDS:
              - check:             Re-checks if there are any reminders and/or restores the warning dialog.
              - restore:           Restores the warning dialog if there is anything to warn about.
-             - settings:          Toggles the config window 
+             - settings:          Toggles the config window
              - config:            Toggles the config window
              - dismiss [current]: Dismisses the warning dialog.
                 - current:        Dismisses the current warning in the warning dialog.
@@ -189,7 +192,7 @@ internal sealed class Systems : IDisposable {
       });
     } catch (Exception ex) {
 #if DEBUG || xPersonalRelease
-      Svc.Log.Error(ex, "Failed to add command with name \"{0}\"", name);
+      Svc.Log.Error(ex, "Failed to add command with name {0}", name);
 #endif
     }
   }
@@ -297,6 +300,43 @@ internal sealed class Systems : IDisposable {
   private void ShowUI()
     => this.WarningDialog.OnUIShow();
 
+  internal static List<WorldInfo> WorldInfos { get; } = GetWorldInfos();
+
+  internal readonly struct WorldInfo(string worldName, uint worldId, string dataCemter, ushort dataCenterId, string region, ushort regionId) {
+    public string WorldName { get; } = worldName;
+    public string DataCemter { get; } = dataCemter;
+    public string Region { get; } = region;
+    public uint WorldId { get; } = worldId;
+    public ushort DataCenterId { get; } = dataCenterId;
+    public ushort RegionId { get; } = regionId;
+  }
+
+  private static List<WorldInfo> GetWorldInfos() {
+    List<WorldInfo> output = [];
+    try {
+      Svc.Data.GameData.GetExcelSheet<World>(Language.English)?.ToDictionary(x => x.RowId, x => x.Name.ExtractText()) ?? [];
+      Svc.Data.GameData.GetExcelSheet<>(Language.English)?.ToDictionary(x => x.RowId, x => x.Name.ExtractText()) ?? [];
+      unsafe {
+        var instance = DataCenterHelper.Instance();
+        if (instance == null)
+          return [];
+        var dataCenters = instance->DataCenters;
+        for (int i = 0; i < dataCenters.Count; i++) {
+          var dataCenter = dataCenters[i];
+          var dataCenterId = dataCenter.Index;
+          var dataCenterName = dataCenter.NameString;
+          byte regionId = dataCenter.Region;
+          string regionName = ((ExcelWorldHelper.Region)regionId).ToString();
+        }
+      }
+
+    } catch (Exception exception) {
+      Svc.Log.Error(exception, "Failed to get collection of world infos");
+    }
+
+    return output;
+  }
+
   /// <summary>
   /// Tries to get the <see cref="World" /> name via the provided id.
   /// </summary>
@@ -331,6 +371,7 @@ internal sealed class Systems : IDisposable {
     if (!_isDisposed) {
       if (disposing) {
         // Save the plugin config at the end.
+        PluginConfig.SavePlayerConfigs();
         PluginConfig.Save();
         // NOTE: dispose managed state (managed objects)
       }

@@ -1,6 +1,7 @@
-﻿<Project Sdk="Dalamud.NET.Sdk/11.0.0">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Dalamud.NET.Sdk/11.0.0">
+
   <PropertyGroup>
-    <Company>Neko Boi Nick</Company>
     <Authors>Neko Boi Nick</Authors>
     <Description>
       Allows any number of mounts to be enabled for the mount roulette, instead of having to choose between the
@@ -18,30 +19,31 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <PlatformTarget>x64</PlatformTarget>
     <Platforms>$(PlatformTarget)</Platforms>
-    <Configurations>Release;Debug;ILRepackTest;PersonalRelease</Configurations>
-    <Nullable>Enable</Nullable>
-    <LangVersion>Latest</LangVersion>
-    <GenerateDependencyFile>False</GenerateDependencyFile>
-    <EnforceCodeStyleInBuild>False</EnforceCodeStyleInBuild>
+    <Configurations>$(Configurations);ILRepackTest;PersonalRelease;</Configurations>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
     <Configurations>Debug;Release;ILRepackTest;PersonalRelease</Configurations>
   </PropertyGroup>
 
   <PropertyGroup Label="Build">
     <OutputType>Library</OutputType>
-    <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
-    <DebugSymbols>True</DebugSymbols>
-    <DebugType>Full</DebugType>
-    <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
-    <RestorePackagesWithLockFile>True</RestorePackagesWithLockFile>
-    <CopyLocalLockFileAssemblies>True</CopyLocalLockFileAssemblies>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <PropertyGroup Label="Feature">
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Version>1.0.3.1</Version>
   </PropertyGroup>
 
   <PropertyGroup>
+    <Company>$(Authors)</Company>
     <AssemblyTitle>$(Title)</AssemblyTitle>
     <AssemblyName>$(MSBuildProjectName)</AssemblyName>
     <Product>$(Title)</Product>
@@ -51,9 +53,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-    <AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
-    <DalamudLibPath>$(AppData)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -69,75 +70,66 @@
     </BuildDependsOn>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-    <AssemblyName>$(MSBuildProjectName)</AssemblyName>
-    <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
-    <BaseOutputPath>$(OutputPath)</BaseOutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <Optimize>False</Optimize>
-    <DebugType>Full</DebugType>
-    <DebugSymbols>True</DebugSymbols>
+  <PropertyGroup Label="Build Configurations">
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
     <ErrorReport>Prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(Configuration)' == 'ILRepackTest' ">
+  <PropertyGroup Label="Build Configurations" Condition=" '$(Configuration)' == 'PersonalRelease' OR '$(Configuration)' == 'Release' ">
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Build Configurations" Condition=" '$(Configuration)' == 'ILRepackTest' OR '$(Configuration)' == 'Debug' OR '$(Configuration)' == 'PersonalRelease' ">
+    <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Build Configurations" Condition=" '$(Configuration)' == 'PersonalRelease' ">
+    <DefineConstants>$(DefineConstants);xPersonalRelease</DefineConstants>
+    <Optimize>false</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Build Configurations" Condition=" '$(Configuration)' != 'PersonalRelease' AND '$(Configuration)' != 'Release' ">
+    <Optimize>false</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Build Configurations" Condition=" '$(Configuration)' == 'PersonalRelease' OR '$(Configuration)' == 'ILRepackTest' ">
     <AssemblyName>$(MSBuildProjectName)2</AssemblyName>
     <OutputPath>$(DalamudDevPlugins)\$(MSBuildProjectName)\</OutputPath>
     <BaseOutputPath>$(OutputPath)</BaseOutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <Optimize>False</Optimize>
-    <DebugType>Full</DebugType>
-    <DebugSymbols>True</DebugSymbols>
-    <ErrorReport>Prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Build Configurations" Condition=" '$(Configuration)' != 'PersonalRelease' AND '$(Configuration)' != 'ILRepackTest' ">
+    <AssemblyName>$(MSBuildProjectName)</AssemblyName>
+    <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
+    <BaseOutputPath>$(OutputPath)</BaseOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Build Configurations" Condition=" '$(Configuration)' == 'ILRepackTest' ">
     <BuildDependsOn>$(BuildDependsOn);PostBuild-ILRepack;</BuildDependsOn>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(Configuration)' == 'PersonalRelease' ">
-    <AssemblyName>$(MSBuildProjectName)2</AssemblyName>
-    <OutputPath>$(DalamudDevPlugins)\$(MSBuildProjectName)\</OutputPath>
-    <BaseOutputPath>$(OutputPath)</BaseOutputPath>
-    <DefineConstants>xPersonalRelease;DEBUG;TRACE</DefineConstants>
-    <Optimize>False</Optimize>
-    <DebugType>Full</DebugType>
-    <DebugSymbols>True</DebugSymbols>
-    <ErrorReport>Prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <AssemblyName>$(MSBuildProjectName)</AssemblyName>
-    <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
-    <BaseOutputPath>$(OutputPath)</BaseOutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>True</Optimize>
-    <DebugType>Full</DebugType>
-    <DebugSymbols>True</DebugSymbols>
-    <ErrorReport>Prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-
   <ItemGroup Condition=" '$(Configuration)' != 'PersonalRelease' ">
-    <Content Include="HousingTimeoutReminder2.yaml" CopyToOutputDirectory="Never" />
-    <None Remove="HousingTimeoutReminder.yaml" />
+    <Content Include="$(MSBuildProjectName).yaml" CopyToOutputDirectory="Never" />
+    <None Remove="$(MSBuildProjectName)2.yaml" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(Configuration)' == 'PersonalRelease' ">
-    <Content Include="HousingTimeoutReminder.yaml" CopyToOutputDirectory="Never" />
-    <None Remove="HousingTimeoutReminder2.yaml" />
+    <Content Include="$(MSBuildProjectName)2.yaml" CopyToOutputDirectory="Never" />
+    <None Remove="$(MSBuildProjectName).yaml" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)lib\ECommons\ECommons\ECommons.csproj" />
-    <PackageReference Include="ILRepack" Version="2.0.34" GeneratePathProperty="True" Condition=" '$(Configuration)' == 'ILRepackTest' " />
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.34.2" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers" Condition=" '$(Configuration)' == 'ILRepackTest' " />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(Configuration)' != 'Release' AND '$(Configuration)' != 'Debug' ">
+  <ItemGroup>
     <!-- Hide the bin folder when configuration is set to "Debug" -->
     <None Remove="$(ProjectDir)bin\**" />
     <Compile Remove="$(ProjectDir)bin\**" />
-    <None Remove="$(ProjectDir)bin\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -150,35 +142,15 @@
     <Content Include="$(SolutionDir)LICENSE" CopyToOutputDirectory="Never" />
     <!-- Add the main .editorconfig file to the IDE -->
     <EditorConfigFiles Remove="$(SolutionDir).editorconfig" />
-    <None Include="$(SolutionDir).editorconfig" Link=".editorconfig" />
+    <None Include="$(SolutionDir).editorconfig" Link=".editorconfig" CopyToOutputDirectory="Never" />
     <EditorConfigFiles Remove="$(SolutionDir)lib\.editorconfig" />
-    <None Include="$(SolutionDir)lib\.editorconfig" Link="lib\.editorconfig" />
+    <None Include="$(SolutionDir)lib\.editorconfig" Link="lib\.editorconfig" CopyToOutputDirectory="Never" />
     <!-- Add the resources for use -->
-    <Folder Include="$(ProjectDir)images\" />
+    <Folder Include="$(ProjectDir)images\" CopyToOutputDirectory="Never" />
   </ItemGroup>
-
-  <Target Name="CleanOutDir" AfterTargets="Build">
-    <ItemGroup>
-      <DeleteAssemblies Include="$(TargetDir)$(AssemblyName).deps.json" />
-    </ItemGroup>
-    <Message Text="Deleting @(DeleteAssemblies)" Importance="High" />
-    <Delete Files="@(DeleteAssemblies)" />
-    <!--<RemoveDir Directories="$(TargetDir)ref\" />-->
-  </Target>
-
-  <Target Name="PostBuild" AfterTargets="CleanOutDir" Condition=" '$(Configuration)' == 'Debug' ">
-    <ItemGroup>
-      <InputAssemblies Include="$(TargetPath)" />
-      <InputAssemblies Include="$(TargetDir)*.dll" Exclude="$(TargetPath)" />
-    </ItemGroup>
-    <!--<Exec Command="$(PkgILRepack)tools\ILRepack.exe /union /lib:$(DalamudLibPath) /out:$(TargetDir)$(TargetFileName) @(InputAssemblies, ' ')" />-->
-    <ItemGroup>
-      <CleanAssemblies Include="$(TargetDir)*.dll" Exclude="$(TargetDir)$(TargetFileName)" />
-    </ItemGroup>
-    <!--<Delete Files="@(CleanAssemblies)" />-->
-  </Target>
 
   <ItemGroup>
     <OriginalFiles Remove="Plugin.cs" />
   </ItemGroup>
+
 </Project>

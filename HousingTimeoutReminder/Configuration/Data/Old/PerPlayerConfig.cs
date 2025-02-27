@@ -1,6 +1,4 @@
-﻿using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
-using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration.Data;
-using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration.Data.Old;
+﻿using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration.Data;
 using Newtonsoft.Json;
 
 // ReSharper disable once CheckNamespace

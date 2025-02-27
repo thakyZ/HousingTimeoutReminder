@@ -104,7 +104,9 @@ public abstract class HouseBase {
     return DateTimeOffset.FromUnixTimeSeconds(this.LastVisit).AddDays(Plugin.Systems.Config.Global.DaysToWait);
   }
 
-  public bool IsValid => this.Room is > 0 and <= APARTMENT_MAX && this.Plot is > 0 and <= PLOT_MAX && this.Ward is > 0 and <= WARD_MAX && this.District != District.Unknown;
+  public bool IsValid
+    => (this.IsApartment ? this.Room is > 0 and <= APARTMENT_MAX : this.Plot is > 0 and <= PLOT_MAX)
+       && this.Ward is > 0 and <= WARD_MAX && this.District != District.Unknown;
 
 #region Comparison Operators
   /// <summary>

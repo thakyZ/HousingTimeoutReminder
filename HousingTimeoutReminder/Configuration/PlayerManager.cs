@@ -1,15 +1,15 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
 using Dalamud.Game.ClientState.Objects.SubKinds;
-using ECommons.Logging;
-using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
-using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration.Data;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using ECommons.Logging;
+using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration.Data;
+using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
 
 // Place this after the namespace to avoid conflict.
-using Config = Config;
 using TaskAwaiter = System.Runtime.CompilerServices.ConfiguredTaskAwaitable<int>.ConfiguredTaskAwaiter;
 
 internal sealed class PlayerManager {
@@ -62,6 +62,7 @@ internal sealed class PlayerManager {
       _playerConfig = LoadPlayerConfig(entry);
     }
 
+    // ReSharper disable once InvertIf
     if (_playerConfig is null) {
       _playerConfig = CreatePlayerConfig();
 
@@ -152,7 +153,35 @@ internal sealed class PlayerManager {
       return;
     }
 
-    File.WriteAllText(Path.Combine(dir, entry.FileName), JsonConvert.SerializeObject(config));
+    try {
+      string configPath = Path.Combine(dir, entry.FileName);
+      if (File.Exists(configPath)) {
+        Svc.Log.Verbose("Writing player config to already existing path, {0}", configPath);
+        WriteFile(configPath, FileMode.Truncate);
+      } else {
+        Svc.Log.Verbose("Writing player config to new path, {0}", configPath);
+        WriteFile(configPath, FileMode.Create);
+      }
+    } catch (Exception exception) {
+      Svc.Log.Error(exception, "Failed to serialize config to path.");
+    }
+    return;
+
+    void WriteFile(string configPath, FileMode mode) {
+      using FileStream fr = File.Open(configPath, mode);
+      using var sw = new StreamWriter(fr);
+
+      string json = JsonConvert.SerializeObject(config, Formatting.Indented, new JsonSerializerSettings {
+        Error = (object? _, ErrorEventArgs args) => {
+          Svc.Log.Error(args.ErrorContext.Error, "Failed to serialize config to path, {0}, on line {1}:{2}", configPath, args.ErrorContext.Path);
+        },
+        TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple,
+        TypeNameHandling = TypeNameHandling.Objects,
+      });
+
+      json = json.Replace(Svc.PluginInterface.Manifest.InternalName, Plugin.InternalName);
+      sw.Write(json);
+    }
   }
 
   /// <summary>
@@ -210,8 +239,15 @@ internal sealed class PlayerManager {
       // ReSharper disable once InvertIf
       if (File.Exists(path)) {
         try {
-          return JsonConvert.DeserializeObject<PlayerConfig>(File.ReadAllText(path));
-        } catch (IOException /* file deleted in the meantime. shouldn't happen, but technically can */) { }
+          using FileStream fs = File.OpenRead(path);
+          using var sr = new StreamReader(fs);
+          string json = sr.ReadToEnd();
+          return JsonConvert.DeserializeObject<PlayerConfig>(json);
+        } catch (IOException /* file deleted in the meantime. shouldn't happen, but technically can */ exception) {
+#if DEBUG || xPersonalRelease
+          Svc.Log.Error(exception, "Failed to deserialize player config at path, {0}", path);
+#endif
+        }
       }
     }
 
@@ -242,9 +278,7 @@ internal sealed class PlayerManager {
   /// </summary>
   /// <returns>A new instance of a <see cref="PlayerConfig" />.</returns>
   private static PlayerConfig CreatePlayerConfig()
-    => new PlayerConfig {
-      IsNew = true,
-    };
+    => new PlayerConfig { IsNew = true };
 
   /// <summary>
   /// Gets the directory path to the player config directory.

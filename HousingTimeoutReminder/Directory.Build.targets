@@ -1,16 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
+  <PropertyGroup>
+    <DisableTask>true</DisableTask>
+  </PropertyGroup>
+
 	<ItemGroup>
-		<OriginalFiles      Include="$(ProjectDir)Plugin.cs" />
-		<BackupFiles        Include="$(ProjectDir)Plugin.cs.bak" />
-		<BackupOrignalFiles Include="$(ProjectDir)Plugin.cs.bak.bak" />
+		<OriginalFiles       Include="$(ProjectDir)Plugin.cs" />
+		<BackupFiles         Include="$(ProjectDir)Plugin.cs.bak" />
+		<BackupOriginalFiles Include="$(ProjectDir)Plugin.cs.bak.bak" />
 	</ItemGroup>
-	<Target Name="PreBuild-Template" BeforeTargets="CoreResGen">
-		<XmlRead Prefix="n" Namespace="http://schemas.microsoft.com/developer/msbuild/2003" XPath="/Project/PropertyGroup/Title/text()" XmlFileName="$(ProjectDir)$(MSBuildProjectName).csproj">
+
+  <!-- TODO: Move away from MSBuild Community Tools, perhaps to Cake (C# Make) -->
+  <!-- Disabled for now. -->
+	<Target Name="PreBuild-Template" BeforeTargets="CoreResGen" Condition=" '$(DisableTask)' == 'false' ">
+		<XmlRead Prefix="n"
+             Namespace="http://schemas.microsoft.com/developer/msbuild/2003"
+             XPath="/Project/PropertyGroup/Title/text()"
+             XmlFileName="$(ProjectDir)$(MSBuildProjectName).csproj">
 			<Output TaskParameter="Value" PropertyName="PluginTitle" />
 		</XmlRead>
 		<Message Text="Plugin Title: $(PluginTitle)" />
-		<XmlRead Prefix="n" Namespace="http://schemas.microsoft.com/developer/msbuild/2003" XPath="/Project/PropertyGroup/Authors/text()" XmlFileName="$(ProjectDir)$(MSBuildProjectName).csproj">
+		<XmlRead Prefix="n"
+             Namespace="http://schemas.microsoft.com/developer/msbuild/2003"
+             XPath="/Project/PropertyGroup/Authors/text()"
+             XmlFileName="$(ProjectDir)$(MSBuildProjectName).csproj">
 			<Output TaskParameter="Value" PropertyName="PluginAuthors" />
 		</XmlRead>
 		<Message Text="Plugin Authors: [ $(PluginAuthors) ]" />
@@ -22,36 +35,37 @@
 				<ReplacementValue>$(PluginAuthors)</ReplacementValue>
 			</Tokens>
 		</ItemGroup>
-		<Copy SourceFiles="@(OriginalFiles);@(OriginalFiles)" DestinationFiles="@(BackupFiles);@(BackupOrignalFiles)" />
+		<Copy SourceFiles="@(OriginalFiles);@(OriginalFiles)" DestinationFiles="@(BackupFiles);@(BackupOriginalFiles)" />
 		<TemplateFile Template="@(BackupFiles)" OutputFilename="@(OriginalFiles)" Tokens="@(Tokens)" />
 		<OnError ExecuteTargets="Reset-PreBuildTasks" />
 	</Target>
 
-
-	<Target Name="Reset-PreBuildTasks" AfterTargets="PostBuild">
+  <!-- Disabled for now. -->
+	<Target Name="Reset-PreBuildTasks" AfterTargets="PostBuild" Condition=" '$(DisableTask)' == 'false' ">
 		<Delete Files="@(OriginalFiles);@(BackupFiles)" />
-		<Move Condition="Exists(@(BackupOrignalFiles))" SourceFiles="@(BackupOrignalFiles)" DestinationFiles="@(OriginalFiles)" />
+		<Move Condition="Exists(@(BackupOriginalFiles))" SourceFiles="@(BackupOriginalFiles)" DestinationFiles="@(OriginalFiles)" />
 	</Target>
 
-	<Target Name="PostBuild" AfterTargets="Build"></Target>
+  <!-- Disabled for now. -->
+  <Target Name="PostBuild" AfterTargets="Build" Condition=" 'false' == 'true' ">
+  </Target>
 
 	<Target Name="ILRepacker" BeforeTargets="CleanOutDir" Condition=" '$(Configuration)' == 'ILRepackTest' ">
     <ItemGroup>
-			<InputAssemblies Include="$(TargetPath)" />
-			<InputAssemblies Include="$(TargetDir)*.dll" Exclude="$(TargetPath)" />
+		  <InputAssemblies Include="$(TargetPath)" />
+		  <InputAssemblies Include="$(TargetDir)*.dll" Exclude="$(TargetPath)" />
     </ItemGroup>
     <ItemGroup>
         <!-- Must be a fully qualified name -->
         <DoNotInternalizeAssemblies Include="ExampleAssemblyToMerge3" />
     </ItemGroup>
-    <ILRepack
-      Union="True"
-      Internalize="True"
-      InternalizeExclude="@(DoNotInternalizeAssemblies)"
-      LibraryPath="$(DalamudLibPath)"
-      InputAssemblies="@(InputAssemblies)"
-      TargetKind="Dll"
-      OutputFile="$(TargetPath)"/>
+    <ILRepack Union="true"
+              Internalize="true"
+              InternalizeExclude="@(DoNotInternalizeAssemblies)"
+              LibraryPath="$(DalamudLibPath)"
+              InputAssemblies="@(InputAssemblies)"
+              TargetKind="dll"
+              OutputFile="$(TargetPath)" />
 		<ItemGroup>
 			<CleanAssemblies Include="$(TargetDir)*.dll" Exclude="$(TargetPath)" />
 		</ItemGroup>
@@ -60,11 +74,21 @@
 
 	<Target Name="CleanOutDir" AfterTargets="PostBuild">
 		<ItemGroup>
-			<DeleteAssemblies Include="$(TargetDir)$(AssemblyName).deps.json" />
+			<DeleteLooseFiles Include="$(TargetDir)$(AssemblyName).deps.json" />
 		</ItemGroup>
-		<Message Text="Deleting @(DeleteAssemblies)" Importance="high" />
-		<Delete Files="@(DeleteAssemblies)" />
-		<RemoveDir Directories="$(TargetDir)ref\" />
-		<RemoveDir Directories="$(TargetDir)runtimes\" />
+		<Message Text="Deleting Loose Files..." Importance="high" Condition=" $(DeleteLooseFiles.Length) != '0' " />
+		<Delete Files="@(DeleteLooseFiles)" />
+		<Message Text="Deleting $(TargetDir)ref\" Importance="high" Condition="Exists('$(TargetDir)ref\')" />
+		<RemoveDir Directories="$(TargetDir)ref\" Condition="Exists('$(TargetDir)ref\')" />
+		<Message Text="Deleting $(TargetDir)ref\" Importance="high" Condition="Exists('$(TargetDir)runtimes\')" />
+		<RemoveDir Directories="$(TargetDir)runtimes\" Condition="Exists('$(TargetDir)runtimes\')" />
+    <ItemGroup>
+        <Directories Include="$([System.IO.Directory]::GetDirectories('$(TargetDir)', '*', System.IO.SearchOption.AllDirectories))" />
+        <Directories>
+            <Files>$([System.IO.Directory]::GetFiles("%(Directories.Identity)", "*", System.IO.SearchOption.AllDirectories).get_Length())</Files>
+        </Directories>
+    </ItemGroup>
+		<Message Text="Deleting Empty Directories..." Importance="high" Condition=" $(Directories.Length) != '0' " />
+    <RemoveDir Directories="@(Directories)" Condition=" $(Directories.Length) != '0' AND %(Files) == '0' " />
 	</Target>
 </Project>

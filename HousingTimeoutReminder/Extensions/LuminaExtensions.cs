@@ -1,4 +1,5 @@
-﻿using Lumina.Excel;
+﻿using System.Runtime.CompilerServices;
+using Lumina.Excel;
 using Lumina.Excel.Sheets;
 
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Extensions;
@@ -11,6 +12,7 @@ internal static class LuminaExtensions {
   /// Gets the name of the <see cref="World" />.
   /// </summary>
   /// <param name="rowRefWorld">The current instance of a row reference.</param>
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
   public static string? GetName(this RowRef<World> rowRefWorld)
     => rowRefWorld.ValueNullable?.Name.ExtractText() ?? null;
 }

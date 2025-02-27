@@ -52,7 +52,7 @@ public class PlayerConfigEntryJsonConverter : JsonConverter<PlayerConfigEntry> {
             fileName = reader.ReadAsString();
             break;
           default:
-            Svc.Log.Warning("Invalid property found named \"{0}\" at index {1} when parsing a {2}.", propertyName, jsonIndex, nameof(PlayerConfigEntry));
+            Svc.Log.Warning("Invalid property found named {0} at index {1} when parsing a {2}.", propertyName, jsonIndex, nameof(PlayerConfigEntry));
             break;
         }
       } else if (reader.TokenType == JsonToken.EndObject) {

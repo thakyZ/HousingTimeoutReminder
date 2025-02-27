@@ -1,7 +1,8 @@
+using System.Runtime.Serialization;
 using Dalamud.Configuration;
 using Newtonsoft.Json;
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration.Data.Converters;
-using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration.Data.Old;
+using Newtonsoft.Json.Linq;
 
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration.Data;
 
@@ -41,14 +42,17 @@ public partial class Config : IPluginConfiguration {
   /// <summary>
   /// Gets or sets the currently loaded config instance's list of <see cref="PlayerConfig" /> entries.
   /// </summary>
-  [JsonProperty(ItemConverterType = typeof(PlayerConfigEntryKeyValuePairCollectionJsonConverter))]
+  [JsonConverter(typeof(PlayerConfigEntryKeyValuePairCollectionJsonConverter))]
   public PlayerConfigEntryKeyValuePairCollection PlayerEntries { get; set; } = [];
+
+  [JsonIgnore]
+  public PlayerConfigKeyValuePairCollection PlayerConfigEntries { get; set; } = [];
 
 #region Obsolete
   [Versions(introduced: 1, removed: 2)]
   [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
   [Obsolete($"Use {nameof(Config)}.{nameof(PlayerEntries)} instead")]
-  public List<PerPlayerConfig>? PlayersConfigs { get; set; } = null;
+  public List<PerPlayerConfig>? PlayerConfigs { get; set; }
 
   /// <summary>
   /// Gets or sets the old property for the number of days to wait until notifications show again.
@@ -56,7 +60,7 @@ public partial class Config : IPluginConfiguration {
   [Versions(introduced: 0, removed: 2)]
   [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
   [Obsolete($"Use {nameof(GlobalConfig)}.{nameof(GlobalConfig.DaysToWait)} instead")]
-  public int? DaysToWait { get; set; } = null;
+  public int? DaysToWait { get; set; }
 
   /// <summary>
   /// Gets or sets old property for the position of the warning dialog on the screen.
@@ -64,7 +68,7 @@ public partial class Config : IPluginConfiguration {
   [Versions(introduced: 1, removed: 2)]
   [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
   [Obsolete($"Use {nameof(GlobalConfig)}.{nameof(GlobalConfig.WarningPosition)} instead")]
-  public Position? WarningPosition { get; set; } = null;
+  public Position? WarningPosition { get; set; }
 
   /// <summary>
   /// Gets or sets old property for whether to show all players for notifications, otherwise just the currently logged in player.
@@ -72,25 +76,25 @@ public partial class Config : IPluginConfiguration {
   [Versions(introduced: 1, removed: 2)]
   [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
   [Obsolete($"Use {nameof(GlobalConfig)}.{nameof(GlobalConfig.ShowForAllPlayers)} instead")]
-  public bool? ShowAllPlayers { get; set; } = null;
+  public bool? ShowAllPlayers { get; set; }
 
   /// <inheritdoc cref="PerPlayerConfig.FreeCompanyEstate"/>
   [Versions(introduced: 0, removed: 1)]
   [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
   [Obsolete($"Use {nameof(GlobalConfig)}.{nameof(PlayerConfig.FreeCompanyEstate)} instead")]
-  public HousingPlot? FreeCompanyEstate { get; set; } = null;
+  public HousingPlot? FreeCompanyEstate { get; set; }
 
   /// <inheritdoc cref="PerPlayerConfig.PrivateEstate"/>
   [Versions(introduced: 0, removed: 1)]
   [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
   [Obsolete($"Use {nameof(GlobalConfig)}.{nameof(PlayerConfig.PrivateEstate)} instead")]
-  public HousingPlot? PrivateEstate { get; set; } = null;
+  public HousingPlot? PrivateEstate { get; set; }
 
   /// <inheritdoc cref="PerPlayerConfig.Apartment"/>
   [Versions(introduced: 0, removed: 1)]
   [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
   [Obsolete($"Use {nameof(GlobalConfig)}.{nameof(PlayerConfig.Apartment)} instead")]
-  public HousingPlot? Apartment { get; set; } = null;
+  public HousingPlot? Apartment { get; set; }
 #endregion Obsolete
 
   /// <summary>
@@ -98,23 +102,41 @@ public partial class Config : IPluginConfiguration {
   /// </summary>
   public Config() {}
 
+  internal void LoadPlayerConfigs() {
+    // ReSharper disable once SuggestVarOrType_SimpleTypes
+    foreach (var entry in this.PlayerEntries) {
+      try {
+        if (Plugin.Systems.PlayerManager.LoadPlayerConfig(entry.ConfigEntry) is PlayerConfig config) {
+          this.PlayerConfigEntries.Add(entry.ConfigEntry, config);
+        } else {
+          Svc.Log.Warning("Failed to load config for player, {0}, at path {1}", entry.ConfigEntry.DisplayName, entry.ConfigEntry.FileName ?? "null");
+        }
+      } catch (Exception exception) {
+        Svc.Log.Error(exception, "Failed to load config for player, {0}, at path {1}", entry.ConfigEntry.DisplayName, entry.ConfigEntry.FileName ?? "null");
+      }
+    }
+  }
+
   /// <summary>
   /// Saves the current plugin's config instance.
   /// </summary>
   public static void Save() {
     // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
-    if (Svc.PluginInterface is null || Plugin.Systems?.Config is null) {
+    if (Plugin.Systems?.Config is null) {
       return;
     }
 
-    Svc.PluginInterface.SavePluginConfig(Plugin.Systems.Config);
+    SaveConfig(Plugin.Systems.Config);
   }
 
-  private static void SaveConfig(Config config) {
-    if (Svc.PluginInterface is null) {
-      return;
+  public static void SavePlayerConfigs() {
+    // ReSharper disable once SuggestVarOrType_SimpleTypes
+    foreach ((PlayerConfigEntry entry, PlayerConfig config) in Plugin.Systems.Config.PlayerConfigEntries) {
+      try {
+        PlayerManager.SavePlayerConfig(entry, config);
+      } catch (Exception exception) {
+        Svc.Log.Error(exception, "Failed to save config for player, {0}, at path {1}", entry.DisplayName, entry.FileName ?? "null");
+      }
     }
-
-    Svc.PluginInterface.SavePluginConfig(config);
   }
 }

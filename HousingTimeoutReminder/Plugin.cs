@@ -18,8 +18,12 @@ public class Plugin : IDalamudPlugin {
       if (Name.EndsWith('2')) {
         try {
           var info = new DirectoryInfo(output);
-          if (info.Parent is DirectoryInfo parent) {
+
+          if (info.Exists) {
             Directory.Delete(output);
+          }
+
+          if (info.Parent is DirectoryInfo parent) {
             output = Path.Combine(parent.FullName, info.Name.TrimEnd('2'));
           } else {
             Directory.Delete(output);
@@ -60,6 +64,7 @@ public class Plugin : IDalamudPlugin {
     ECommonsMain.Init(@interface, this, Module.ObjectFunctions);
     Svc.Log?.Verbose("Loading {0}", Name);
     _systems = new Systems();
+    this._systems.Config.LoadPlayerConfigs();
   }
 
   protected virtual void Dispose(bool disposing) {

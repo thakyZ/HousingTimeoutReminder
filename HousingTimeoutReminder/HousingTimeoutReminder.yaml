@@ -8,4 +8,5 @@ repo_url: https://github.com/thakyZ/HousingTimeoutReminder
 tags:
   - Utility
 icon_url: https://raw.githubusercontent.com/thakyZ/MyDalamudPlugins/main/plugins/HousingTimeoutReminder/images/icon.png
-changelog: Update to ApiX and DawnTrail
+changelog: |-
+  Recompiled for patch 7.18

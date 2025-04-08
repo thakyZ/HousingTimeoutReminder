@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Dalamud.Configuration;
@@ -58,13 +59,7 @@ public class Config : IPluginConfiguration {
   /// <summary>
   /// Gets the current player config that exists.
   /// </summary>
-  public static PerPlayerConfig? GetPlayerConfiguration() {
-    if (Svc.ClientState.LocalPlayer is IPlayerCharacter player) {
-      return System.PluginConfig.PlayerConfigs.Find(x => x.PlayerID?.FirstLastName == player.Name.TextValue);
-    }
-
-    return null;
-  }
+  public static PerPlayerConfig? PlayerConfiguration => System.PluginConfig.PlayerConfigs.FirstOrDefault(x => x.PlayerID == System.GetCurrentPlayerID());
 
   /// <summary>
   /// Initializes the plugin config.
@@ -101,7 +96,7 @@ public class Config : IPluginConfiguration {
   /// </summary>
   private static void WaitUntilFileIsFree() {
     try {
-      Svc.Log.Info("Starting wait task.");
+      //Svc.Log.Info("Starting wait task.");
       var waitedMoments = 0;
       Task.Run(async () => {
         while (IsFileInUseReadWrite(Svc.PluginInterface.ConfigFile)) {
@@ -109,7 +104,7 @@ public class Config : IPluginConfiguration {
           waitedMoments++;
         }
       }).Wait();
-      Svc.Log.Info($"Ended wait task. Waited {waitedMoments} time(s).");
+      //Svc.Log.Info($"Ended wait task. Waited {waitedMoments} time(s).");
     } catch (Exception exception) {
       Svc.Log.Error(exception, "Failed to start or run task to wait until config file is free.");
     }
@@ -120,7 +115,7 @@ public class Config : IPluginConfiguration {
   /// </summary>
   public void Save() {
 #if DEBUG
-    Svc.Log.Info("Debug StackTrace:\n" + Environment.StackTrace);
+    //Svc.Log.Info("Debug StackTrace:\n" + Environment.StackTrace);
 #endif
     WaitUntilFileIsFree();
     Svc.PluginInterface.SavePluginConfig(this);
@@ -143,20 +138,6 @@ public class Config : IPluginConfiguration {
   }
 
   /// <summary>
-  /// Gets the <see cref="PerPlayerConfig" /> from a matching <see cref="PlayerID" />,
-  /// if the player config doesn't exist it will create abstract new one from
-  /// the current player config.
-  /// </summary>
-  /// <returns>Returns a player config for the current player config.</returns>
-  internal static PerPlayerConfig? GetCurrentPlayerConfig() {
-    if (System.GetCurrentPlayerID() is PlayerID playerID) {
-      return System.PluginConfig.PlayerConfigs.Find(x => x.PlayerID?.Equals(playerID) == true) ?? AddNewPlayerFromCurrent();
-    }
-
-    return null;
-  }
-
-  /// <summary>
   /// Adds a new <see cref="PerPlayerConfig" /> to the player config list,
   /// from a player identification.
   /// </summary>
@@ -165,8 +146,12 @@ public class Config : IPluginConfiguration {
   /// the player is not logged in.</returns>
   internal static PerPlayerConfig AddNewPlayerConfig(PlayerID playerID) {
     var playerConfig = new PerPlayerConfig { PlayerID = playerID };
-    System.PluginConfig.PlayerConfigs.Add(playerConfig);
-    return playerConfig;
+    if (!System.PluginConfig.PlayerConfigs.Any(x => x.PlayerID == playerID)) {
+      System.PluginConfig.PlayerConfigs.Add(playerConfig);
+      return playerConfig;
+    }
+
+    return System.PluginConfig.PlayerConfigs.First(x => x.PlayerID == playerID);
   }
 
   /// <summary>
@@ -177,7 +162,7 @@ public class Config : IPluginConfiguration {
   /// <param name="playerID">A player identification.</param>
   /// <returns>Returns a player config for the current player config.</returns>
   internal static PerPlayerConfig GetPlayerConfig(PlayerID playerID) {
-    return System.PluginConfig.PlayerConfigs.Find(x => x.PlayerID?.Equals(playerID) == true) ?? AddNewPlayerConfig(playerID);
+    return System.PluginConfig.PlayerConfigs.FirstOrDefault(x => x.PlayerID == playerID) ?? AddNewPlayerConfig(playerID);
   }
 
   [JsonExtensionData]

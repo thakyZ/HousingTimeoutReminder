@@ -21,7 +21,7 @@ public sealed class HousingManager: IEquatable<HousingManager> {
   /// The apartment wing. (or division)
   /// Determines the division the house is in but only if it is an apartment.
   /// </summary>
-  public int ApartmentWing => Plot switch { -127 => 1, -126 => 2, _ => 0, };
+  public int ApartmentWing => Plot switch { -126 => 1, -127 => 2, _ => 0, };
   /// <summary>
   /// The room of the apartment.
   /// </summary>

@@ -1,13 +1,21 @@
+using ECommons.DalamudServices;
+
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
 
 /// <summary>
 /// The return booleans if the user has dismissed the warning for the property.
 /// </summary>
 public class Dismissed {
+  private bool fc = false;
   /// <summary>
   /// The bool if player has dismissed warning for their FC House.
   /// </summary>
-  public bool FreeCompanyEstate { get; set; }
+  public bool FreeCompanyEstate {
+    get => fc;
+    set {
+      fc = value;
+    }
+  }
   /// <summary>
   /// The bool if player has dismissed warning for their Private House.
   /// </summary>

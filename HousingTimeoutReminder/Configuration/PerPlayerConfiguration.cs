@@ -62,7 +62,7 @@ public class PerPlayerConfig : IInterface {
   /// Checks if this is the current player config.
   /// </summary>
   [JsonIgnore]
-  public bool IsCurrentPlayerConfig => System.IsLoggedIn && Config.GetCurrentPlayerConfig() is PerPlayerConfig playerConfig && this.DisplayName.Equals(playerConfig.DisplayName);
+  public bool IsCurrentPlayerConfig => System.IsLoggedIn && Config.PlayerConfiguration?.DisplayName.Equals(this.DisplayName) == true;
 
   /// <summary>
   /// Checks if the player config is valid.
@@ -80,17 +80,36 @@ public class PerPlayerConfig : IInterface {
       HousingType.Apartment => this.Apartment.LastVisit,
       _ => -1
     };
-    if (lastVisit == -1) {
+    var isEnabled = housingType switch {
+      HousingType.FreeCompanyEstate => this.FreeCompanyEstate.Enabled,
+      HousingType.PrivateEstate => this.PrivateEstate.Enabled,
+      HousingType.Apartment => this.Apartment.Enabled,
+      _ => false
+    };
+    var isDismissed = housingType switch {
+      HousingType.FreeCompanyEstate => this.IsDismissed.FreeCompanyEstate,
+      HousingType.PrivateEstate => this.IsDismissed.PrivateEstate,
+      HousingType.Apartment => this.IsDismissed.Apartment,
+      _ => true
+    };
+
+    if (lastVisit == -1 || isDismissed || !isEnabled) {
       return false;
     }
-    return DateTimeOffset.FromUnixTimeSeconds(lastVisit).AddDays(System.PluginConfig.DaysToWait).ToUnixTimeSeconds() >= DateTimeOffset.Now.ToUnixTimeSeconds();
+
+    return lastVisit < DateTimeOffset.Now.AddDays(-1 * System.PluginConfig.DaysToWait).ToUnixTimeSeconds();
   }
 
   /// <summary>
   /// The return booleans if the user hasn't visited their property in the days set.
   /// </summary>
   [JsonIgnore]
-  public Dismissed IsDismissed { get; set; } = new();
+  public Dismissed IsDismissed { get; set; }
+
+  public PerPlayerConfig() {
+    Svc.Log.Info("New IsDismissed");
+    IsDismissed = new();
+  }
 
   /// <summary>
   /// Ensures the config directory exists on the file system.

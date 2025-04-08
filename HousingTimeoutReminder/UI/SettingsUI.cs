@@ -327,9 +327,9 @@ public class SettingsUI : Window, IDisposable {
         if (!scrolling.Success) {
           return true;
         }
-        if (System.IsLoggedIn && Config.GetCurrentPlayerConfig() is PerPlayerConfig playerConfig) {
-          ImGui.Text($"Housing Configuration for {playerConfig.DisplayName}:");
-          DrawUserTimeoutSettings(playerConfig);
+        if (System.IsLoggedIn && Config.PlayerConfiguration is not null) {
+          ImGui.Text($"Housing Configuration for {Config.PlayerConfiguration.DisplayName}:");
+          DrawUserTimeoutSettings(Config.PlayerConfiguration);
         }
       }
     } catch (Exception ex) {

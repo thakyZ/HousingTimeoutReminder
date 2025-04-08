@@ -1,22 +1,17 @@
-using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading.Tasks;
 
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
-using Dalamud.IoC;
-using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using Dalamud.Utility;
-using ECommons;
+
 using ECommons.DalamudServices;
 
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
+
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
-using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler;
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.UI;
 
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder;
@@ -102,30 +97,22 @@ public static class System {
     return GetSheetAtRow<World>(homeWorld.Value)?.Name.ExtractText();
   }
 
-  internal static PlayerID? CachedCurrentPlayerId { get; private set; }
+  internal static PlayerID? CachedCurrentPlayerId { get; set; }
 
   /// <summary>Gets the current player name of the logged in character.</summary>
   /// <returns>The full name plus separator plus the home world name.
   /// If the home world is unable to be obtained it will be "unknown" instead.
   /// If the player does not exist or is not logged in it returns null.</returns>
   internal static string? GetCurrentPlayerName() {
-    return GetCurrentPlayerID() is PlayerID player ? player.ToString() : null;
+    return GetCurrentPlayerID()?.ToString();
   }
 
   /// <summary>Gets the current player identification information.</summary>
   /// <returns>The current player identification information.
   /// If the player does not exist or is not logged in it returns null.</returns>
   internal static PlayerID? GetCurrentPlayerID() {
-    if (Svc.ClientState.LocalPlayer is IPlayerCharacter player) {
-      var temp = new PlayerID(player);
-      if (CachedCurrentPlayerId != temp) {
-        CachedCurrentPlayerId = temp;
-      }
-      return temp;
-    }
-    if (CachedCurrentPlayerId is not null && IsLoggedIn) {
+    if (CachedCurrentPlayerId is not null && IsLoggedIn)
       return CachedCurrentPlayerId;
-    }
     return null;
   }
 

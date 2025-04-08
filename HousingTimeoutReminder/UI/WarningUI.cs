@@ -1,5 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Common.Math;
@@ -123,13 +125,14 @@ public class WarningUI : Window, IDisposable {
   /// <param name="playerConfig">An instance of a <see cref="PerPlayerConfig" />.</param>
   /// <returns><see langword="true"/> if successfully drawn otherwise <see langword="false"/>.</returns>
   public bool DrawWarning(HousingType type, PerPlayerConfig playerConfig) {
-    bool state = type switch {
-      HousingType.FreeCompanyEstate => !playerConfig.IsDismissed.FreeCompanyEstate,
-      HousingType.PrivateEstate =>!playerConfig.IsDismissed.PrivateEstate,
-      HousingType.Apartment => !playerConfig.IsDismissed.Apartment,
+    bool isDismissed = type switch {
+      HousingType.FreeCompanyEstate => playerConfig.IsDismissed.FreeCompanyEstate,
+      HousingType.PrivateEstate => playerConfig.IsDismissed.PrivateEstate,
+      HousingType.Apartment => playerConfig.IsDismissed.Apartment,
       _ => false,
     };
-    if (!state) {
+
+    if (isDismissed) {
       return false;
     }
 
@@ -154,13 +157,26 @@ public class WarningUI : Window, IDisposable {
   public override void Draw() {
     if (System.PluginInstance.Repositioning) {
       DrawRepositioning();
+    } else if (System.IsLoggedIn && Config.PlayerConfiguration is not null) {
+      if (playerTypePage == 0) {
+        _ = DrawWarning(HousingType.FreeCompanyEstate, Config.PlayerConfiguration);
+      } else if (playerTypePage == 1) {
+        _ = DrawWarning(HousingType.PrivateEstate, Config.PlayerConfiguration);
+      } else if (playerTypePage == 2) {
+        _ = DrawWarning(HousingType.Apartment, Config.PlayerConfiguration);
+      }
+    } else if (System.PluginConfig.ShowAllPlayers) {
+      foreach (var config in System.PluginConfig.PlayerConfigs.Where(config => !config.IsCurrentPlayerConfig)) {
+        if (playerTypePage == 0) {
+          _ = DrawWarning(HousingType.FreeCompanyEstate, config);
+        } else if (playerTypePage == 1) {
+          _ = DrawWarning(HousingType.PrivateEstate, config);
+        } else if (playerTypePage == 2) {
+          _ = DrawWarning(HousingType.Apartment, config);
+        }
+      }
     }
 
-    if (System.IsLoggedIn && Config.GetCurrentPlayerConfig() is PerPlayerConfig playerConfig) {
-      IsOpen = DrawWarning(HousingType.FreeCompanyEstate, playerConfig)
-            || DrawWarning(HousingType.PrivateEstate, playerConfig)
-            || DrawWarning(HousingType.Apartment, playerConfig);
-    }
     if (Position.HasValue) {
       Position = null;
     }

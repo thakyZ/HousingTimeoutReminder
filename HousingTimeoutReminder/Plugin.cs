@@ -1,13 +1,16 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading.Tasks;
 
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Command;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 
 using ECommons;
 using ECommons.DalamudServices;
+
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler;
 
@@ -46,7 +49,7 @@ public class Plugin : IDalamudPlugin {
   public Plugin(IDalamudPluginInterface pluginInterface) {
     System.PluginInstance = this;
 
-    ECommonsMain.Init(pluginInterface, System.PluginInstance, Module.All);
+    ECommonsMain.Init(pluginInterface, System.PluginInstance);
 
     System.Init();
 
@@ -57,10 +60,10 @@ public class Plugin : IDalamudPlugin {
     Svc.PluginInterface.UiBuilder.Draw += DrawUI;
     Svc.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
     Svc.ClientState.TerritoryChanged += OnTerritoryChanged;
-    Svc.ClientState.Login += OnLogin;
+    Svc.Framework.Update += OnFrameworkUpdate;
+    Svc.ClientState.Logout += OnLogout;
     // ReSharper disable once InvertIf
     if (Svc.ClientState.IsLoggedIn) {
-      OnLogin();
       OnTerritoryChanged(Svc.ClientState.TerritoryType);
     }
   }
@@ -79,11 +82,25 @@ public class Plugin : IDalamudPlugin {
     Svc.PluginInterface.UiBuilder.Draw -= DrawUI;
     Svc.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
     Svc.ClientState.TerritoryChanged -= OnTerritoryChanged;
-    Svc.ClientState.Login -= OnLogin;
+    Svc.Framework.Update -= OnFrameworkUpdate;
     Svc.ClientState.Logout -= OnLogout;
     Svc.Commands.RemoveHandler(CommandName);
     ECommonsMain.Dispose();
     GC.SuppressFinalize(this);
+  }
+  private void OnFrameworkUpdate(IFramework framework) {
+    if (Svc.ClientState.LocalPlayer is not null) {
+      //Task.Run(() => {
+      if (Svc.ClientState.LocalPlayer is IPlayerCharacter player) {
+        var temp = new PlayerID(player);
+        if (System.CachedCurrentPlayerId != temp) {
+          System.CachedCurrentPlayerId = temp;
+        }
+      }
+      //}).ContinueWith((Task task) => {
+      //  Svc.Log.Error(task.Exception, "Error when trying to get current player ID.");
+      //});
+    }
   }
 
   /// <summary>
@@ -96,6 +113,7 @@ public class Plugin : IDalamudPlugin {
     }
 
     if (territory is null) {
+      Svc.Log.Information("Territory is null");
       return;
     }
 
@@ -111,29 +129,35 @@ public class Plugin : IDalamudPlugin {
       return false;
     }
 
-    return System.PluginConfig.PlayerConfigs.Any(playerConfig => playerConfig.PlayerID is not null && HousingTimer.ManualCheck(playerConfig.PlayerID, territory.Value) && (playerConfig.IsLate(HousingType.FreeCompanyEstate) || playerConfig.IsLate(HousingType.PrivateEstate) || playerConfig.IsLate(HousingType.Apartment)));
+    return System.PluginConfig.PlayerConfigs.Any(playerConfig => {
+      if (playerConfig.PlayerID is not null) {
+        _ = HousingTimer.ManualCheck(playerConfig.PlayerID, territory.Value);
+        return playerConfig.IsLate(HousingType.FreeCompanyEstate) || playerConfig.IsLate(HousingType.PrivateEstate) || playerConfig.IsLate(HousingType.Apartment);
+      }
+
+      return false;
+    });
   }
 
   /// <summary>
   /// The function to call when changing instance. Checks timers after.
   /// </summary>
-  /// <param name="e">The territory ID as a ushort.</param>
-  private void OnTerritoryChanged(ushort e) {
-    CheckTimers(e);
-  }
+  /// <param name="territoryId">The territory ID as a ushort.</param>
+  private void OnTerritoryChanged(ushort territoryId) {
+    Task.Run(() => {
+      byte count = 0;
+      while (!ECommons.GenericHelpers.IsScreenReady()) {
+        if (count > 50) return;
+        count++;
+        Task.Delay(400).Wait();
+      }
 
-  /// <summary>
-  /// The function to call when logging in.
-  /// Creates plugin config for player if it doesn't exist.
-  /// Then loads the housing timer.
-  /// </summary>
-  private static void OnLogin() {
-    // Services.Config.TryUpdateBrokenNames();
-    if (Svc.ClientState.LocalPlayer is not null && Config.GetCurrentPlayerConfig() is null) {
-      System.PluginConfig.PlayerConfigs.Add(new PerPlayerConfig {
-        PlayerID = new PlayerID(Svc.ClientState.LocalPlayer)
-      });
-    }
+      CheckTimers(territoryId);
+    }).ContinueWith((Task task) => {
+      if (task.Exception is not null) {
+        Svc.Log.Error(task.Exception, "Error when detecting territory change.");
+      }
+    });
   }
 
   /// <summary>
@@ -141,6 +165,7 @@ public class Plugin : IDalamudPlugin {
   /// Unloads the housing timer.
   /// </summary>
   private static void OnLogout(int type, int code) {
+    System.CachedCurrentPlayerId = null;
     // Do nothing for now.
   }
 
@@ -165,10 +190,8 @@ public class Plugin : IDalamudPlugin {
     System.WindowSystem.Draw();
     if (Repositioning) {
       System.WarningUI.IsOpen = true;
-    } else if (IsWarningToBeDisplayed()) {
-      System.WarningUI.IsOpen = true;
     } else {
-      System.WarningUI.IsOpen = false;
+      System.WarningUI.IsOpen = IsWarningToBeDisplayed();
     }
   }
 

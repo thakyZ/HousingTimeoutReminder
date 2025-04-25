@@ -40,14 +40,12 @@ public interface IWardProperty {
   /// <summary>
   /// A boolean whether or not this Apartment is in the subdistrict of the ward.
   /// </summary>
-
   [JsonIgnore]
-  public bool IsSubdistrict => SubdistrictID switch { 1 => true, 2 => false, _ => false, };
+  public bool IsSubdistrict => SubdistrictID switch { 1 => false, 2 => true, _ => false, };
 
   /// <summary>
   /// The specific subdistrict the house is in.
   /// </summary>
-
   [JsonIgnore]
   public byte SubdistrictID => Plot switch { -127 => 1, -126 => 2, _ => 0, };
 
@@ -66,7 +64,7 @@ public interface IWardProperty {
   /// Checks if this instance of IWardProperty is valid.
   /// </summary>
   /// <returns>Returns true if valid, false otherwise.</returns>
-  public bool IsValid();
+  public bool IsValid { get; }
 
   /// <summary>
   /// Resets the instance of an <see href="IWardProperty" />

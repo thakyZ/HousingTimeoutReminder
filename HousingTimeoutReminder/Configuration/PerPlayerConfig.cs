@@ -59,57 +59,31 @@ public class PerPlayerConfig : IInterface {
   public Apartment Apartment { get; set; } = new();
 
   /// <summary>
+  /// Gets a <see langword="bool" /> that determines if any of the enabled housing properties are late.
+  /// </summary>
+  [JsonIgnore]
+  public bool HasLateProperties => this.FreeCompanyEstate.IsLate || this.PrivateEstate.IsLate || this.Apartment.IsLate;
+
+  /// <summary>
   /// Checks if this is the current player config.
   /// </summary>
   [JsonIgnore]
   public bool IsCurrentPlayerConfig => System.IsLoggedIn && Config.PlayerConfiguration?.DisplayName.Equals(this.DisplayName) == true;
 
   /// <summary>
+  /// Resets the dismissed states of all properties.
+  /// </summary>
+  public void ResetWarnings() {
+    this.FreeCompanyEstate.IsDismissed = false;
+    this.PrivateEstate.IsDismissed = false;
+    this.Apartment.IsDismissed = false;
+  }
+
+  /// <summary>
   /// Checks if the player config is valid.
   /// </summary>
   [JsonIgnore]
-  public bool IsValid => FreeCompanyEstate.IsValid() && PrivateEstate.IsValid() && Apartment.IsValid();
-
-  /// <summary>
-  /// The return booleans if the user hasn't visited their property in the days set.
-  /// </summary>
-  public bool IsLate(HousingType housingType) {
-    var lastVisit = housingType switch {
-      HousingType.FreeCompanyEstate => this.FreeCompanyEstate.LastVisit,
-      HousingType.PrivateEstate => this.PrivateEstate.LastVisit,
-      HousingType.Apartment => this.Apartment.LastVisit,
-      _ => -1
-    };
-    var isEnabled = housingType switch {
-      HousingType.FreeCompanyEstate => this.FreeCompanyEstate.Enabled,
-      HousingType.PrivateEstate => this.PrivateEstate.Enabled,
-      HousingType.Apartment => this.Apartment.Enabled,
-      _ => false
-    };
-    var isDismissed = housingType switch {
-      HousingType.FreeCompanyEstate => this.IsDismissed.FreeCompanyEstate,
-      HousingType.PrivateEstate => this.IsDismissed.PrivateEstate,
-      HousingType.Apartment => this.IsDismissed.Apartment,
-      _ => true
-    };
-
-    if (lastVisit == -1 || isDismissed || !isEnabled) {
-      return false;
-    }
-
-    return lastVisit < DateTimeOffset.Now.AddDays(-1 * System.PluginConfig.DaysToWait).ToUnixTimeSeconds();
-  }
-
-  /// <summary>
-  /// The return booleans if the user hasn't visited their property in the days set.
-  /// </summary>
-  [JsonIgnore]
-  public Dismissed IsDismissed { get; set; }
-
-  public PerPlayerConfig() {
-    Svc.Log.Info("New IsDismissed");
-    IsDismissed = new();
-  }
+  public bool IsValid => FreeCompanyEstate.IsValid && PrivateEstate.IsValid && Apartment.IsValid;
 
   /// <summary>
   /// Ensures the config directory exists on the file system.
@@ -135,7 +109,7 @@ public class PerPlayerConfig : IInterface {
 
   [JsonExtensionData]
   [SuppressMessage("Roslynator", "RCS1169")]
-  private IDictionary<string, JToken>? _additionalData = null;
+  private IDictionary<string, JToken>? _additionalData;
 
   [OnDeserialized]
   private void OnDeserialized(StreamingContext context)

@@ -164,9 +164,11 @@ public sealed class PlayerID : IEquatable<PlayerID> {
     if (objA is null) {
       return objB is null;
     }
+
     if (objB is PlayerID idB) {
       return objA.Equals(idB);
     }
+
     return false;
   }
 

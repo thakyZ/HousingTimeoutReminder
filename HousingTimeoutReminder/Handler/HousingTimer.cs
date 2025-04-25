@@ -20,14 +20,6 @@ public static class HousingTimer {
   }
 
   /// <summary>
-  /// The method to get if <see cref="HousingManager"/> is ready or not.
-  /// </summary>
-  /// <return><see langword="true"/> if the housing message is ready.</return>
-  public static bool TestFunctionsNotNull(ushort territory) {
-    return HousingManager.ConvertToDistrict(territory) != District.Unknown;
-  }
-
-  /// <summary>
   /// Checks the location of the player and returns <see langword="true"/> if successful.
   /// Inside House:
   ///     Apartment: null; ApartmentWing: null; Plot: 53; Ward: 26; Yard: null;
@@ -68,12 +60,12 @@ public static class HousingTimer {
           return true;
         }
       }
-      return true;
     } catch (Exception exception) {
       Svc.Log.Error(exception, "Failed to check timers.");
+      return false;
     }
 
-    return false;
+    return true;
   }
 
   /// <summary>
@@ -81,18 +73,18 @@ public static class HousingTimer {
   /// </summary>
   /// <param name="territory">The territory ID as a ushort.</param>
   public static void OnTerritoryChanged(ushort territory) {
-    bool test = TestFunctionsNotNull(territory);
     PlayerID? playerID = System.GetCurrentPlayerID();
 
-    if (test && playerID is not null) {
-      Svc.Log.Warning("test && playerID is not null");
+    if (playerID is not null) {
+#if DEBUG
+      Svc.Log.Warning("playerID is not null");
+#endif
       CheckLocation(playerID, territory);
     }
 #if DEBUG
-    Svc.Log.Debug($"TestFunctionsNotNullAsync returned {test}.");
     Svc.Log.Debug(playerID is null
-      ? "GetCurrentPlayerID returned null."
-      : "GetCurrentPlayerID returned typeof PerPlayerConfig.");
+      ? $"{nameof(System.GetCurrentPlayerID)} returned null."
+      : $"{nameof(System.GetCurrentPlayerID)} returned typeof {nameof(PlayerID)}.");
 #endif
   }
 
@@ -106,7 +98,7 @@ public static class HousingTimer {
   /// otherwise <see langword="false"/>.</returns>
   public static bool ManualCheck(PlayerID playerID, ushort territory) {
     try {
-      return TestFunctionsNotNull(territory) && CheckLocation(playerID, territory);
+      return CheckLocation(playerID, territory);
     } catch (OperationCanceledException operationCanceledException) {
       Svc.Log.Error(operationCanceledException, "Error when waiting for task to complete.");
       return false;

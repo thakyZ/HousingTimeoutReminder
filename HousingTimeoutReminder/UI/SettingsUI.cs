@@ -75,8 +75,7 @@ public class SettingsUI : Window, IDisposable {
   /// <param name="next">If to check for the next limit date.</param>
   /// <param name="now">If to check for the date from now.</param>
   /// <returns>The offset date from the last visit of <see cref="type"/>.</returns>
-  [SuppressMessage("Performance", "CA1822:Mark members as static")]
-  private DateTimeOffset ShortenFunction(PerPlayerConfig playerConfig, HousingType type, bool next = false, bool now = false) {
+  private static DateTimeOffset ShortenFunction(PerPlayerConfig playerConfig, HousingType type, bool next = false, bool now = false) {
     long visit = type switch {
       HousingType.FreeCompanyEstate => playerConfig.FreeCompanyEstate.LastVisit,
       HousingType.PrivateEstate => playerConfig.PrivateEstate.LastVisit,
@@ -104,7 +103,7 @@ public class SettingsUI : Window, IDisposable {
   /// <param name="type">The type of housing to check.</param>
   /// <returns>A <see cref="Tuple{String, String}"/> with the last check formatted timestamp,
   /// and the next timelimit formatted timestamp.</returns>
-  private (string Last, string Next) CheckConsistency(PerPlayerConfig playerConfig, HousingType type) {
+  private static (string Last, string Next) CheckConsistency(PerPlayerConfig playerConfig, HousingType type) {
     var lastStamp = ShortenFunction(playerConfig, type);
     var nextStamp = ShortenFunction(playerConfig, type, next: true);
 
@@ -145,7 +144,7 @@ public class SettingsUI : Window, IDisposable {
         if (header.Success) {
           using (var child = ImRaii.Child($"##{type}-Child-{playerId}", new Vector2(this.GetMaxWidth() - 10f - indent, 106f * ImGuiHelpers.GlobalScale), true)) {
             if (child.Success) {
-              if (playerConfig.GetOfType(type).IsValid()) {
+              if (playerConfig.GetOfType(type).IsValid) {
                 (string last, string next) = CheckConsistency(playerConfig, type);
 
                 ImGuiRaii.ColoredLabel("Your last visit was on: ", last, (string value) => {
@@ -261,6 +260,7 @@ public class SettingsUI : Window, IDisposable {
       Svc.Log.Error(ex, nameof(DrawHousingDropDown));
       return false;
     }
+
     return true;
   }
 
@@ -284,9 +284,9 @@ public class SettingsUI : Window, IDisposable {
     }
 
     // ReSharper disable once InvertIf
-    if (ImGui.Button($"Reset Notifs##Reset-{playerId}")) {
-      System.PluginInstance.CheckTimers();
-      playerConfig.IsDismissed.Reset();
+    if (ImGui.Button($"Reset Warnings##Reset-{playerId}")) {
+      Plugin.CheckTimers();
+      playerConfig.ResetWarnings();
     }
   }
 
@@ -296,6 +296,7 @@ public class SettingsUI : Window, IDisposable {
         if (!scrolling.Success) {
           return true;
         }
+
         ImGui.Text("Days To Wait");
         ImGui.SameLine();
         using (var i = ImRaii.ItemWidth(100)) {
@@ -318,6 +319,7 @@ public class SettingsUI : Window, IDisposable {
       Svc.Log.Error(ex, nameof(DrawGlobalTab));
       return false;
     }
+
     return true;
   }
 
@@ -327,6 +329,7 @@ public class SettingsUI : Window, IDisposable {
         if (!scrolling.Success) {
           return true;
         }
+
         if (System.IsLoggedIn && Config.PlayerConfiguration is not null) {
           ImGui.Text($"Housing Configuration for {Config.PlayerConfiguration.DisplayName}:");
           DrawUserTimeoutSettings(Config.PlayerConfiguration);
@@ -336,6 +339,7 @@ public class SettingsUI : Window, IDisposable {
       Svc.Log.Error(ex, nameof(DrawCurrentPlayerTab));
       return false;
     }
+
     return true;
   }
 
@@ -366,6 +370,7 @@ public class SettingsUI : Window, IDisposable {
       Svc.Log.Error(ex, nameof(DrawOtherPlayersTab));
       return false;
     }
+
     return true;
   }
 
@@ -378,6 +383,7 @@ public class SettingsUI : Window, IDisposable {
             ImGui.Text("Failed to draw global settings tab.");
           }
         }
+
         if (System.IsLoggedIn) {
           using (var tabItem = ImRaii.TabItem("Current Player")) {
             if (tabItem.Success && !DrawCurrentPlayerTab()) {
@@ -385,11 +391,10 @@ public class SettingsUI : Window, IDisposable {
             }
           }
         }
-        if (System.PluginConfig.ShowAllPlayers) {
-          using (var tabItem = ImRaii.TabItem("Other Players")) {
-            if (tabItem.Success && !DrawOtherPlayersTab()) {
-              ImGui.Text("Failed to draw other players settings tab.");
-            }
+
+        using (var tabItem = ImRaii.TabItem("Other Players")) {
+          if (tabItem.Success && !DrawOtherPlayersTab()) {
+            ImGui.Text("Failed to draw other players settings tab.");
           }
         }
       }
@@ -418,8 +423,8 @@ public class SettingsUI : Window, IDisposable {
 
     ImGuiRaii.VerticalSeparator();
 
-    if (ImGui.Button("Reset Notifs")) {
-      System.PluginInstance.CheckTimers();
+    if (ImGui.Button("Reset Warnings")) {
+      Plugin.CheckTimers();
       System.PluginConfig.ResetAll();
     }
 

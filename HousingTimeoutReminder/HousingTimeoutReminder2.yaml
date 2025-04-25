@@ -9,4 +9,4 @@ tags:
   - Utility
 icon_url: https://raw.githubusercontent.com/thakyZ/MyDalamudPlugins/main/plugins/HousingTimeoutReminder/images/icon.png
 changelog: |-
-  Recompiled for patch 7.2+ and updated for API 12
+  Big update!!! The warning dialog has pages now, and I am happy with the results. If you have any issues please report it to the GitHub.

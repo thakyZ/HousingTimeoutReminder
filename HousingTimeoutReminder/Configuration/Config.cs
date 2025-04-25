@@ -31,6 +31,12 @@ public class Config : IPluginConfiguration {
   public List<PerPlayerConfig> PlayerConfigs { get; set; } = [];
 
   /// <summary>
+  /// The list of player configurations.
+  /// </summary>
+  [JsonIgnore]
+  public List<PerPlayerConfig> PlayerConfigsWithWarnings => [.. PlayerConfigs.Where((PerPlayerConfig p) => p.HasLateProperties)];
+
+  /// <summary>
   /// The configuration directory for the plugin.
   /// </summary>
   public static string ConfigDirectory => Svc.PluginInterface.GetPluginConfigDirectory();
@@ -39,6 +45,11 @@ public class Config : IPluginConfiguration {
   /// The default days to wait for when to notify the player that they haven't visited their property for some time.
   /// </summary>
   public ushort DaysToWait { get; set; } = 28;
+
+  /// <summary>
+  /// Gets the amount of days to wait in Unix Time (Seconds).
+  /// </summary>
+  public long DateToWaitSeconds => DateTimeOffset.MinValue.AddDays(DaysToWait).ToUnixTimeSeconds() - DateTimeOffset.MinValue.ToUnixTimeSeconds();
 
   /// <summary>
   /// The position of the warning dialog on the screen.
@@ -52,7 +63,7 @@ public class Config : IPluginConfiguration {
 
   public void ResetAll() {
     foreach (var playerConfig in PlayerConfigs) {
-      playerConfig.IsDismissed.Reset();
+      playerConfig.ResetWarnings();
     }
   }
 
@@ -68,6 +79,7 @@ public class Config : IPluginConfiguration {
     if (DaysToWait > 30) {
       DaysToWait = 30;
     }
+
     if (DaysToWait < 1) {
       DaysToWait = 1;
     }
@@ -88,6 +100,7 @@ public class Config : IPluginConfiguration {
     } catch (IOException e) when ((e.HResult & 0x0000FFFF) == 32) {
       return true;
     }
+
     return false;
   }
 
@@ -167,11 +180,10 @@ public class Config : IPluginConfiguration {
 
   [JsonExtensionData]
   [SuppressMessage("Roslynator", "RCS1169")]
-  private IDictionary<string, JToken>? _additionalData = null;
+  private IDictionary<string, JToken>? _additionalData;
 
   [OnDeserialized]
-  private void OnDeserialized(StreamingContext context)
-  {
+  private void OnDeserialized(StreamingContext context) {
     if (_additionalData is null) {
 #if DEBUG
       Svc.Log.Warning("Config _additionalData is null");
@@ -199,6 +211,7 @@ public static class ConfigExtensions {
           break;
       }
     }
+
     Svc.Log.Info("Migrated Config.");
     return config;
   }
@@ -240,9 +253,11 @@ public static class ConfigExtensions {
     if (System.GetCurrentPlayerID() is not PlayerID playerID) {
       return config;
     }
-    if (config.PlayerConfigs.Exists(x => x.PlayerID is not null && x.PlayerID.HomeWorld is null) != true) {
+
+    if (!config.PlayerConfigs.Exists(x => x.PlayerID is not null && x.PlayerID.HomeWorld is null)) {
       return config;
     }
+
     int index = config.PlayerConfigs.FindIndex(x => x.PlayerID is not null && x.PlayerID.HomeWorld is null);
     config.PlayerConfigs[index].PlayerID = playerID;
     return config;

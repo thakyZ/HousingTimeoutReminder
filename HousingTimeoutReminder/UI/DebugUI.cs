@@ -9,6 +9,7 @@ using ECommons.DalamudServices;
 
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler;
 using ECommons;
+using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
 
 namespace NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.UI;
 public class DebugUI : Window, IDisposable {
@@ -25,13 +26,79 @@ public class DebugUI : Window, IDisposable {
   }
 
   public override void Draw() {
+    ImGui.BeginChild("ScrollArea##HousingTimeoutReminder.Debug", ImGui.GetWindowContentRegionMax(), false, ImGuiWindowFlags.AlwaysVerticalScrollbar | ImGuiWindowFlags.HorizontalScrollbar);
+    var dateTimeNow = DateTimeOffset.Now.ToUnixTimeSeconds();
+    var dateToWaitSeconds = System.PluginConfig.DateToWaitSeconds;
     ImGui.Text($"ImGui.GetStyle().ItemSpacing ( {ImGui.GetStyle().ItemSpacing.X}, {ImGui.GetStyle().ItemSpacing.Y} )");
-    ImGui.SameLine();
     var defaultColor = ImGui.GetColorU32(ImGuiCol.Text);
 
     if (!System.IsLoggedIn) {
       return;
     }
+
+    ImGui.Text("Warning UI Pagination");
+    ImGui.Indent(20f);
+    ImGui.Text($"CurrentMainPage = {System.WarningUI.Pagination.CurrentMainPage}");
+    ImGui.Text($"TotalMainPages = {Pagination.TotalMainPages}");
+    ImGui.Text($"CurrentSubPage = {System.WarningUI.Pagination.CurrentSubPage}");
+    ImGui.Text($"TotalSubPages = {System.WarningUI.Pagination.ValidSubPages}");
+    ImGui.Text($"CurrentPage = {System.WarningUI.Pagination.CurrentPage}");
+    ImGui.Text($"TotalPages = {Pagination.TotalPages}");
+    ImGui.Text($"CurrentlyDisplayedPlayer = {System.WarningUI.Pagination.CurrentPlayerConfig?.DisplayName ?? "NULL"}");
+    ImGui.Indent(20f);
+    foreach (var playerConfig in System.PluginConfig.PlayerConfigs) {
+      ImGui.Text($"{playerConfig.DisplayName} -> MaxSubPages = {Pagination.GetValidSubPagesCount(playerConfig)}");
+    }
+
+    ImGui.Indent(-20f);
+    ImGui.Indent(-20f);
+
+    ImGui.Text($"Player Configs With Warnings: {System.PluginConfig.PlayerConfigsWithWarnings.Count}");
+    ImGui.Indent(20f);
+    foreach (var playerConfig in System.PluginConfig.PlayerConfigsWithWarnings) {
+      ImGui.Text(playerConfig.DisplayName);
+      ImGui.Indent(20f);
+      ImGui.Text($"HasLateProperties = {playerConfig.HasLateProperties}");
+      ImGui.Text($"IsValid = {playerConfig.IsValid}");
+      ImGui.Text($"IsBroken = {playerConfig.IsBroken}");
+      ImGui.Text($"IsCurrentPlayerConfig = {playerConfig.IsCurrentPlayerConfig}");
+      ImGui.Indent(-20f);
+
+      ImGui.Indent(20f);
+      ImGui.Text(nameof(PerPlayerConfig.FreeCompanyEstate));
+      ImGui.Indent(20f);
+      ImGui.Text($"IsLate = {playerConfig.FreeCompanyEstate.IsLate}");
+      ImGui.Text($"IsValid = {playerConfig.FreeCompanyEstate.IsValid}");
+      ImGui.Text($"Enabled = {playerConfig.FreeCompanyEstate.Enabled}");
+      ImGui.Text($"IsDismissed = {playerConfig.FreeCompanyEstate.IsDismissed}");
+      ImGui.Text($"Time = {dateTimeNow} - {playerConfig.FreeCompanyEstate.LastVisit} > {dateToWaitSeconds} = {dateTimeNow - playerConfig.FreeCompanyEstate.LastVisit > dateToWaitSeconds}");
+      ImGui.Indent(-20f);
+      ImGui.Indent(-20f);
+
+      ImGui.Indent(20f);
+      ImGui.Text(nameof(PerPlayerConfig.PrivateEstate));
+      ImGui.Indent(20f);
+      ImGui.Text($"IsLate = {playerConfig.PrivateEstate.IsLate}");
+      ImGui.Text($"IsValid = {playerConfig.PrivateEstate.IsValid}");
+      ImGui.Text($"Enabled = {playerConfig.PrivateEstate.Enabled}");
+      ImGui.Text($"IsDismissed = {playerConfig.PrivateEstate.IsDismissed}");
+      ImGui.Text($"Time = {dateTimeNow} - {playerConfig.PrivateEstate.LastVisit} > {dateToWaitSeconds} = {dateTimeNow - playerConfig.PrivateEstate.LastVisit > dateToWaitSeconds}");
+      ImGui.Indent(-20f);
+      ImGui.Indent(-20f);
+
+      ImGui.Indent(20f);
+      ImGui.Text(nameof(PerPlayerConfig.Apartment));
+      ImGui.Indent(20f);
+      ImGui.Text($"IsLate = {playerConfig.Apartment.IsLate}");
+      ImGui.Text($"IsValid = {playerConfig.Apartment.IsValid}");
+      ImGui.Text($"Enabled = {playerConfig.Apartment.Enabled}");
+      ImGui.Text($"IsDismissed = {playerConfig.Apartment.IsDismissed}");
+      ImGui.Text($"Time = {dateTimeNow} - {playerConfig.Apartment.LastVisit} > {dateToWaitSeconds} = {dateTimeNow - playerConfig.Apartment.LastVisit > dateToWaitSeconds}");
+      ImGui.Indent(-20f);
+      ImGui.Indent(-20f);
+    }
+
+    ImGui.Indent(-20f);
 
     var currentLocation = HousingManager.GetCurrentLocation(Svc.ClientState.TerritoryType);
 
@@ -85,5 +152,7 @@ public class DebugUI : Window, IDisposable {
       ImGui.TextColored(currentLocation?.ApartmentWing is not null ? defaultColor.ToVector4() : ImGuiColors.DalamudRed, currentLocation?.ApartmentWing is not null ? currentLocation.ApartmentWing.ToString() : "Null");
       ImGui.EndTable();
     }
+
+    ImGui.EndChild();
   }
 }

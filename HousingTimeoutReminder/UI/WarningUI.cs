@@ -1,11 +1,14 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
+
+using ECommons.DalamudServices;
+
 using FFXIVClientStructs.FFXIV.Common.Math;
+
 using ImGuiNET;
+
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Handler;
 
@@ -23,6 +26,15 @@ public class WarningUI : Window, IDisposable {
     ImGuiWindowFlags.NoMove;
 
   /// <summary>
+  /// An instance of the <see cref="Pagination" /> to implement pages in the warning dialog.
+  /// </summary>
+  internal readonly Pagination Pagination = new();
+
+  private const float INITIAL_WINDOW_HEIGHT = 85f;
+
+  private float WindowHeight = INITIAL_WINDOW_HEIGHT;
+
+  /// <summary>
   /// The name of the window.
   /// </summary>
   public static string Name { get => "Housing Timeout Reminder Warning"; }
@@ -33,7 +45,7 @@ public class WarningUI : Window, IDisposable {
   public WarningUI() : base(Name, WindowFlags) {
     this.AllowPinning = true;
     this.AllowClickthrough = true;
-    this.Size = new Vector2(500, 85) * ImGuiHelpers.GlobalScale;
+    this.Size = new Vector2(500f, INITIAL_WINDOW_HEIGHT) * ImGuiHelpers.GlobalScale;
     this.SizeCondition = ImGuiCond.Always;
   }
 
@@ -55,7 +67,7 @@ public class WarningUI : Window, IDisposable {
   /// TODO: Make it a clear window with thicc red border or something like that.
   /// </summary>
   public void DrawRepositioning() {
-    Flags = ImGuiWindowFlags.NoResize    | ImGuiWindowFlags.NoCollapse        |
+    Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse |
             ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse |
             ImGuiWindowFlags.NoTitleBar;
 
@@ -69,51 +81,63 @@ public class WarningUI : Window, IDisposable {
     _oldPostion = ImGui.GetWindowPos();
   }
 
+  private bool DisplayText(string text) {
+    var height = ImGui.CalcTextSize("A").Y;
+    var padding = ImGui.GetStyle().WindowPadding.X;
+    var wrappedHeight = ImGui.CalcTextSize(text, 0, (this.Size?.X ?? 500f) - (padding * 2)).Y;
+
+    if (WindowHeight != INITIAL_WINDOW_HEIGHT + (wrappedHeight - height)) {
+      WindowHeight += wrappedHeight - height;
+      this.Size = new Vector2(500f, WindowHeight) * ImGuiHelpers.GlobalScale;
+    }
+
+    ImGui.TextWrapped(text);
+
+    if (height == wrappedHeight) {
+      ImGui.SetCursorPosY(ImGui.GetCursorPosY() + height);
+    }
+
+    ImGui.Text("You can dismiss this at the button below.");
+    return ImGui.Button("Dismiss");
+  }
+
   /// <summary>
   /// Displays a warning for the player of a <see cref="PerPlayerConfig" />.
   /// </summary>
   /// <param name="type">The type of housing to display.</param>
   /// <param name="playerConfig">An instance of a <see cref="PerPlayerConfig" />.</param>
-  [SuppressMessage("Performance", "CA1822:Mark members as static")]
   public void DisplayForPlayer(HousingType type, PerPlayerConfig playerConfig) {
     DateTimeOffset dateTimeOffset = DateTime.Now;
     DateTimeOffset dateTimeOffsetLast;
     int pastDays;
-    switch (type)
-    {
+
+    switch (type) {
       case HousingType.FreeCompanyEstate:
         dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfig.FreeCompanyEstate.LastVisit);
         pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
-        ImGui.Text($"Your Free Company Estate has not been visited in, {pastDays} days.");
-        ImGui.Text("You can dismiss this at the button below.");
-        if (ImGui.Button("Dismiss")) {
-          playerConfig.IsDismissed.FreeCompanyEstate = true;
+        if (this.DisplayText($"The Free Company Estate of {playerConfig.DisplayName} has not been visited in, {pastDays} days.")) {
+          playerConfig.FreeCompanyEstate.IsDismissed = true;
+          this.Pagination.WrapPages();
         }
 
         break;
       case HousingType.PrivateEstate:
         dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfig.PrivateEstate.LastVisit);
         pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
-        ImGui.Text($"Your Private Estate has not been visited in, {pastDays} days.");
-        ImGui.Text("You can dismiss this at the button below.");
-        if (ImGui.Button("Dismiss")) {
-          playerConfig.IsDismissed.PrivateEstate = true;
+        if (this.DisplayText($"The Private Estate of {playerConfig.DisplayName} has not been visited in, {pastDays} days.")) {
+          playerConfig.PrivateEstate.IsDismissed = true;
+          this.Pagination.WrapPages();
         }
 
         break;
       case HousingType.Apartment:
         dateTimeOffsetLast = DateTimeOffset.FromUnixTimeSeconds(playerConfig.Apartment.LastVisit);
         pastDays = (int)dateTimeOffset.Subtract(dateTimeOffsetLast).TotalDays;
-        ImGui.Text($"Your Apartment has not been visited in, {pastDays} days.");
-        ImGui.Text("You can dismiss this at the button below.");
-        if (ImGui.Button("Dismiss")) {
-          playerConfig.IsDismissed.Apartment = true;
+        if (this.DisplayText($"The Apartment of {playerConfig.DisplayName} has not been visited in, {pastDays} days.")) {
+          playerConfig.Apartment.IsDismissed = true;
+          this.Pagination.WrapPages();
         }
 
-        break;
-      case HousingType.Unknown:
-      default:
-        this.IsOpen = false;
         break;
     }
   }
@@ -125,17 +149,6 @@ public class WarningUI : Window, IDisposable {
   /// <param name="playerConfig">An instance of a <see cref="PerPlayerConfig" />.</param>
   /// <returns><see langword="true"/> if successfully drawn otherwise <see langword="false"/>.</returns>
   public bool DrawWarning(HousingType type, PerPlayerConfig playerConfig) {
-    bool isDismissed = type switch {
-      HousingType.FreeCompanyEstate => playerConfig.IsDismissed.FreeCompanyEstate,
-      HousingType.PrivateEstate => playerConfig.IsDismissed.PrivateEstate,
-      HousingType.Apartment => playerConfig.IsDismissed.Apartment,
-      _ => false,
-    };
-
-    if (isDismissed) {
-      return false;
-    }
-
     this.BgAlpha = 0.5f;
     Flags = WindowFlags;
     Position = Configuration.Position.ToVector2(System.PluginConfig.WarningPosition);
@@ -143,38 +156,52 @@ public class WarningUI : Window, IDisposable {
     return false;
   }
 
-  /// <summary>
-  /// TODO: Make Pagination Functionality
-  /// </summary>
-  private int playerPage = 0;
+  private Vector2 MoveCursorToBottomRight(string text) {
+    var pos = ImGui.GetCursorPos();
+    if (this.Size.HasValue) {
+      var textSize = ImGui.CalcTextSize(text).X;
+      var buttonSize = ImGuiHelpers.GetButtonSize("A");
+      var padding = ImGui.GetStyle().WindowPadding;
+      ImGui.SetCursorPos(new Vector2(this.Size.Value.X - (padding.X * 3) - (buttonSize.X * 2) - textSize, this.Size.Value.Y - (padding.Y * 2) - buttonSize.Y));
+    }
+
+    return pos;
+  }
 
   /// <summary>
-  /// TODO: Make Pagination Functionality
+  /// Code to be executed every time the window renders.
   /// </summary>
-  private int playerTypePage = 0;
-
-  /// <inheritdoc />
   public override void Draw() {
     if (System.PluginInstance.Repositioning) {
-      DrawRepositioning();
-    } else if (System.IsLoggedIn && Config.PlayerConfiguration is not null) {
-      if (playerTypePage == 0) {
-        _ = DrawWarning(HousingType.FreeCompanyEstate, Config.PlayerConfiguration);
-      } else if (playerTypePage == 1) {
-        _ = DrawWarning(HousingType.PrivateEstate, Config.PlayerConfiguration);
-      } else if (playerTypePage == 2) {
-        _ = DrawWarning(HousingType.Apartment, Config.PlayerConfiguration);
-      }
-    } else if (System.PluginConfig.ShowAllPlayers) {
-      foreach (var config in System.PluginConfig.PlayerConfigs.Where(config => !config.IsCurrentPlayerConfig)) {
-        if (playerTypePage == 0) {
-          _ = DrawWarning(HousingType.FreeCompanyEstate, config);
-        } else if (playerTypePage == 1) {
-          _ = DrawWarning(HousingType.PrivateEstate, config);
-        } else if (playerTypePage == 2) {
-          _ = DrawWarning(HousingType.Apartment, config);
+      this.DrawRepositioning();
+    } else if (System.IsLoggedIn) {
+      if (this.Pagination.CurrentPlayerConfig is { } config) {
+        if (this.Pagination.CurrentSubPage is HousingType.FreeCompanyEstate) {
+          _ = this.DrawWarning(HousingType.FreeCompanyEstate, config);
+        } else if (this.Pagination.CurrentSubPage is HousingType.PrivateEstate) {
+          _ = this.DrawWarning(HousingType.PrivateEstate, config);
+        } else if (this.Pagination.CurrentSubPage is HousingType.Apartment) {
+          _ = this.DrawWarning(HousingType.Apartment, config);
         }
       }
+
+      var text = $"{this.Pagination.CurrentPage + 1}/{Pagination.TotalPages}";
+      var pos = this.MoveCursorToBottomRight(text);
+      ImGui.AlignTextToFramePadding();
+      ImGui.Text(text);
+      ImGui.SameLine();
+
+      if (ImGui.ArrowButton("Previous##HousingTimeoutReminder.Warning", ImGuiDir.Left)) {
+        this.Pagination.PreviousPage();
+      }
+
+      ImGui.SameLine();
+
+      if (ImGui.ArrowButton("Next##HousingTimeoutReminder.Warning", ImGuiDir.Right)) {
+        this.Pagination.NextPage();
+      }
+
+      ImGui.SetCursorPos(pos);
     }
 
     if (Position.HasValue) {

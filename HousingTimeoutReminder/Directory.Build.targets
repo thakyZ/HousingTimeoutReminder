@@ -5,7 +5,7 @@
 		<BackupFiles        Include="$(ProjectDir)Plugin.cs.bak" />
 		<BackupOrignalFiles Include="$(ProjectDir)Plugin.cs.bak.bak" />
 	</ItemGroup>
-	<Target Name="PreBuild-Template" BeforeTargets="CoreResGen">
+	<!-- <Target Name="PreBuild-Template" BeforeTargets="CoreResGen">
 		<XmlRead Prefix="n" Namespace="http://schemas.microsoft.com/developer/msbuild/2003" XPath="/Project/PropertyGroup/Title/text()" XmlFileName="$(ProjectDir)$(MSBuildProjectName).csproj">
 			<Output TaskParameter="Value" PropertyName="PluginTitle" />
 		</XmlRead>
@@ -25,13 +25,13 @@
 		<Copy SourceFiles="@(OriginalFiles);@(OriginalFiles)" DestinationFiles="@(BackupFiles);@(BackupOrignalFiles)" />
 		<TemplateFile Template="@(BackupFiles)" OutputFilename="@(OriginalFiles)" Tokens="@(Tokens)" />
 		<OnError ExecuteTargets="Reset-PreBuildTasks" />
-	</Target>
+	</Target> -->
 
 
-	<Target Name="Reset-PreBuildTasks" AfterTargets="PostBuild">
+	<!-- <Target Name="Reset-PreBuildTasks" AfterTargets="PostBuild">
 		<Delete Files="@(OriginalFiles);@(BackupFiles)" />
 		<Move Condition="Exists(@(BackupOrignalFiles))" SourceFiles="@(BackupOrignalFiles)" DestinationFiles="@(OriginalFiles)" />
-	</Target>
+	</Target> -->
 
 	<Target Name="PostBuild" AfterTargets="Build"></Target>
 

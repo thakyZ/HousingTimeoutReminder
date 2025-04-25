@@ -1,7 +1,7 @@
-﻿<Project Sdk="Dalamud.NET.Sdk/12.0.0">
+﻿<Project Sdk="Dalamud.NET.Sdk/12.0.2">
   <PropertyGroup>
-    <Company>Neko Boi Nick</Company>
     <Authors>Neko Boi Nick</Authors>
+    <Company>$(Authors)</Company>
     <Description>
       Allows any number of mounts to be enabled for the mount roulette, instead of having to choose between the
       "up to 30" and "EVERYTHING" modes supported by the game. Also has (or will have) an option to omit the
@@ -18,12 +18,11 @@
     <TargetFramework>net9.0-windows</TargetFramework>
     <PlatformTarget>x64</PlatformTarget>
     <Platforms>$(PlatformTarget)</Platforms>
-    <Configurations>Release;Debug;ILRepackTest;PersonalRelease</Configurations>
+    <Configurations>$(Configurations);ILRepackTest;PersonalRelease</Configurations>
     <Nullable>Enable</Nullable>
     <LangVersion>Latest</LangVersion>
     <GenerateDependencyFile>False</GenerateDependencyFile>
     <EnforceCodeStyleInBuild>False</EnforceCodeStyleInBuild>
-    <Configurations>Debug;Release;ILRepackTest;PersonalRelease</Configurations>
   </PropertyGroup>
 
   <PropertyGroup Label="Build">
@@ -38,7 +37,7 @@
 
   <PropertyGroup Label="Feature">
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <Version>1.0.3.3</Version>
+    <Version>1.0.3.4</Version>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -150,6 +149,7 @@
     <Content Include="$(SolutionDir)LICENSE" CopyToOutputDirectory="Never" />
     <!-- Add the main .editorconfig file to the IDE -->
     <EditorConfigFiles Remove="$(SolutionDir).editorconfig" />
+    <Folder Include="Configuration\NewFolder\" />
     <None Include="$(SolutionDir).editorconfig" Link=".editorconfig" />
     <EditorConfigFiles Remove="$(SolutionDir)lib\.editorconfig" />
     <None Include="$(SolutionDir)lib\.editorconfig" Link="lib\.editorconfig" />

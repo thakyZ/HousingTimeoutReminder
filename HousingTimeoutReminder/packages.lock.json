@@ -14,12 +14,6 @@
         "resolved": "1.2.25",
         "contentHash": "xCXiw7BCxHJ8pF6wPepRUddlh2dlQlbr81gXA72hdk4FLHkKXas7EH/n+fk5UCA/YfMqG1Z6XaPiUjDbUNBUzg=="
       },
-      "MSBuildTasks": {
-        "type": "Direct",
-        "requested": "[1.5.0.235, )",
-        "resolved": "1.5.0.235",
-        "contentHash": "pP/oxACREn0tIf8s05FLu9FuZoGRuztYHjy6HntPkhuwQ/dY62ZVlENuKNhUcUaNaSmM2QyR4Vi2Dt4eTqByRg=="
-      },
       "ecommons": {
         "type": "Project"
       }

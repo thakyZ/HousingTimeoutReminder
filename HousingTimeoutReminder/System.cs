@@ -29,7 +29,7 @@ public static class System {
   /// <summary>
   /// The window system of the plugin.
   /// </summary>
-  public static WindowSystem WindowSystem { get; set; } = new(Plugin.StaticName.Replace(" ", string.Empty));
+  public static WindowSystem WindowSystem { get; set; } = new(Plugin.Name.Replace(" ", string.Empty));
   /// <summary>
   /// The ui for warning the player that their house hasn't been visited
   /// in a while.

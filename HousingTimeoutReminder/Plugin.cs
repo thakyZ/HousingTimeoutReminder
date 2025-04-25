@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -8,7 +7,6 @@ using Dalamud.Game.Command;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 
-using ECommons;
 using ECommons.DalamudServices;
 
 using NekoBoiNick.FFXIV.DalamudPlugin.HousingTimeoutReminder.Configuration;
@@ -25,12 +23,7 @@ public class Plugin : IDalamudPlugin {
   /// <summary>
   /// The name of the plugin.
   /// </summary>
-  internal static string StaticName = "Housing Timeout Reminder";
-
-  /// <summary>
-  /// The name of the plugin.
-  /// </summary>
-  public string Name => StaticName;
+  internal static string Name => "Housing Timeout Reminder";
 
   /// <summary>
   /// The plugin's main command name.
@@ -49,7 +42,7 @@ public class Plugin : IDalamudPlugin {
   public Plugin(IDalamudPluginInterface pluginInterface) {
     System.PluginInstance = this;
 
-    ECommonsMain.Init(pluginInterface, System.PluginInstance);
+    ECommons.ECommonsMain.Init(pluginInterface, System.PluginInstance);
 
     System.Init();
 
@@ -59,6 +52,7 @@ public class Plugin : IDalamudPlugin {
 
     Svc.PluginInterface.UiBuilder.Draw += DrawUI;
     Svc.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
+    Svc.PluginInterface.UiBuilder.OpenMainUi += DrawConfigUI;
     Svc.ClientState.TerritoryChanged += OnTerritoryChanged;
     Svc.Framework.Update += OnFrameworkUpdate;
     Svc.ClientState.Logout += OnLogout;
@@ -72,7 +66,6 @@ public class Plugin : IDalamudPlugin {
   /// Dispose of the Dalamud Plugin safely.
   /// </summary>
   public void Dispose() {
-    System.PluginConfig.Save();
     System.WindowSystem.RemoveAllWindows();
     System.WarningUI.Dispose();
     System.SettingsUI.Dispose();
@@ -81,11 +74,12 @@ public class Plugin : IDalamudPlugin {
 #endif
     Svc.PluginInterface.UiBuilder.Draw -= DrawUI;
     Svc.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
+    Svc.PluginInterface.UiBuilder.OpenMainUi -= DrawConfigUI;
     Svc.ClientState.TerritoryChanged -= OnTerritoryChanged;
     Svc.Framework.Update -= OnFrameworkUpdate;
     Svc.ClientState.Logout -= OnLogout;
     Svc.Commands.RemoveHandler(CommandName);
-    ECommonsMain.Dispose();
+    ECommons.ECommonsMain.Dispose();
     GC.SuppressFinalize(this);
   }
   private void OnFrameworkUpdate(IFramework framework) {
@@ -106,8 +100,7 @@ public class Plugin : IDalamudPlugin {
   /// <summary>
   /// Checks the timers when necessary.
   /// </summary>
-  [SuppressMessage("Performance", "CA1822:Mark members as static")]
-  internal void CheckTimers(ushort? territory = null) {
+  internal static void CheckTimers(ushort? territory = null) {
     if (territory is null && System.IsLoggedIn) {
       territory = Svc.ClientState.TerritoryType;
     }
@@ -120,7 +113,7 @@ public class Plugin : IDalamudPlugin {
     HousingTimer.OnTerritoryChanged(territory.Value);
   }
 
-  internal bool IsWarningToBeDisplayed(ushort? territory = null) {
+  internal static bool IsWarningToBeDisplayed(ushort? territory = null) {
     if (territory is null && System.IsLoggedIn) {
       territory = Svc.ClientState.TerritoryType;
     }
@@ -131,8 +124,11 @@ public class Plugin : IDalamudPlugin {
 
     return System.PluginConfig.PlayerConfigs.Any(playerConfig => {
       if (playerConfig.PlayerID is not null) {
-        _ = HousingTimer.ManualCheck(playerConfig.PlayerID, territory.Value);
-        return playerConfig.IsLate(HousingType.FreeCompanyEstate) || playerConfig.IsLate(HousingType.PrivateEstate) || playerConfig.IsLate(HousingType.Apartment);
+        if (!HousingTimer.ManualCheck(playerConfig.PlayerID, territory.Value)) {
+          Svc.Log.Warning("Failed to check the position of the player.");
+        }
+
+        return playerConfig.HasLateProperties;
       }
 
       return false;
@@ -193,13 +189,15 @@ public class Plugin : IDalamudPlugin {
     } else {
       System.WarningUI.IsOpen = IsWarningToBeDisplayed();
     }
+#if DEBUG
+    System.DebugUI.IsOpen = System.SettingsUI.IsOpen;
+#endif
   }
 
   /// <summary>
   /// Draws the UI of the settings menu of the plugin.
   /// </summary>
-  [SuppressMessage("Performance", "CA1822:Mark members as static")]
-  public void DrawConfigUI() {
+  public static void DrawConfigUI() {
     System.SettingsUI.IsOpen = true;
   }
 }

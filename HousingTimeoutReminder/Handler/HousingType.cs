@@ -29,6 +29,7 @@ public static class HousingTypeEnumHelper {
     if (member?.GetCustomAttribute<DescriptionAttribute>() is DescriptionAttribute description) {
       return description.Description;
     }
+
     return district.ToString();
   }
 

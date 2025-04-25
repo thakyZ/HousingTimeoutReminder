@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <!-- These are used for the tasks in the target called "PreBuild-MSBuildTasks" -->
-    <PackageReference Include="MSBuildTasks" Version="1.5.0.235" PrivateAssets="All" IncludeAssets="Runtime;Build;Native;ContentFiles;Analyzers;BuildTransitive" />
+    <!-- <PackageReference Include="MSBuildTasks" Version="1.5.0.235" PrivateAssets="All" IncludeAssets="Runtime;Build;Native;ContentFiles;Analyzers;BuildTransitive" /> -->
   </ItemGroup>
 
   <!-- When the configuration is set to "Release" it will only read from the main plugin configuration file -->

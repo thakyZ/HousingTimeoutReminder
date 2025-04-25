@@ -48,6 +48,7 @@ public static partial class ImGuiRaii {
     } catch {
       // Do nothing.
     }
+
     return Vector4.One;
   }
 

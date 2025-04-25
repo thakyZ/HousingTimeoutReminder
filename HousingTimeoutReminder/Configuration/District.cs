@@ -33,6 +33,7 @@ public static class DistrictEnumHelper {
     if (member?.GetCustomAttribute<DescriptionAttribute>() is DescriptionAttribute description) {
       return description.Description;
     }
+
     return district.ToString();
   }
 

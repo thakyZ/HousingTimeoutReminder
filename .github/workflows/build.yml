@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   release:
-    uses: thakyZ/MyDalamudPluginRepo/.github/workflows/reusable_create_release.yml@master
+    uses: thakyZ/MyDalamudPluginRepo/.github/workflows/reusable_create_release.yml@main
     with:
       internal_name: HousingTimeoutReminder
       solution_name: HousingTimeoutReminder

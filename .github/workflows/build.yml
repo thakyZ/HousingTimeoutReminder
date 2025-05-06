@@ -1,84 +1,20 @@
-name: Build
-# Put your personal access token in a repository secret named PAT for cross-repository access
-on:
-  workflow_dispatch:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+name: Create Release and Update Repository
 
-env:
-  PLUGIN_REPO: thakyZ/MyDalamudPlugins
-  PROJECT_NAME: HousingTimeoutReminder
-  PLUGIN_INFO: '{"passed":false,"message":null}'
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
-  build:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4.2.2
-        with:
-          submodules: recursive
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-      - name: Download Dalamud
-        run: |
-          Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/latest.zip -OutFile latest.zip
-          Expand-Archive -Force latest.zip "$env:AppData\XIVLauncher\addon\Hooks\dev\"
-      - name: Build
-        run: |
-          nuget restore ${{ env.PROJECT_NAME }}.sln
-          msbuild ${{ env.PROJECT_NAME }}.sln -p:Configuration=Release
-        env:
-          DOTNET_CLI_TELEMETRY_OUTPUT: true
-      - name: Upload artifact
-        if: contains(toJSON(github.event.commits.*.message), '[PUSH]') && github.event_name == 'push'
-        uses: actions/upload-artifact@v4.6.2
-        with:
-          name: ${{env.PROJECT_NAME}}
-          path: bin/Release/${{env.PROJECT_NAME}}
-          if-no-files-found: error
-      - uses: notiz-dev/github-action-json-property@release
-        with:
-          path: 'bin/Release/${{env.PROJECT_NAME}}/${{env.PROJECT_NAME}}.json'
-          prop_path: 'AssemblyVersion'
-
-  deploy:
-    needs: build
-    if: contains(toJSON(github.event.commits.*.message), '[PUSH]') && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4.2.2
-        with:
-          fetch-depth: 0
-      - uses: actions/download-artifact@v4.3.0
-        with:
-          name: ${{env.PROJECT_NAME}}
-      - shell: pwsh
-        run: |
-          $OutContent = (Get-Content -Path "${{ env.PROJECT_NAME }}.json" | ConvertFrom-Json -Depth 100 | ConvertTo-Json -Depth 100 -Compress);
-          $OutContentFinal = "PLUGIN_INFO={`"passed`":true,`"message`":`"$($OutContent -replace '"', '\"')`"}";
-          If ($OutContent.Length -le 65535) {
-            $OutContentFinal | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append;
-          } Else {
-            Write-Error -Message "`$OutContent Length is longer than 65535 characters. ($($OutContent.Length))";
-            Exit 1
-          }
-      - id: version
-        uses: notiz-dev/github-action-json-property@release
-        with:
-            path: '${{ env.PROJECT_NAME }}.json'
-            prop_path: 'AssemblyVersion'
-      - uses: softprops/action-gh-release@v2.2.2
-        with:
-          name: ${{ env.PROJECT_NAME }} ${{steps.version.outputs.prop}}
-          tag_name: ${{steps.version.outputs.prop}}
-          body: ${{ github.event.commits[0].message }}
-          files: latest.zip
-      - uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.PAT }}
-          repository: ${{ env.PLUGIN_REPO }}
-          event-type: new-release
-          client-payload: ${{ env.PLUGIN_INFO }}
+  release:
+    uses: thakyZ/MyDalamudPluginRepo/.github/workflows/reusable_create_release.yml@master
+    with:
+      internal_name: HousingTimeoutReminder
+      solution_name: HousingTimeoutReminder
+      build_configuration: Release
+      personal_plugin_repo: thakyZ/MyDalamudPluginRepo
+      personal_plugin_repo_branch: main
+    secrets: inherit

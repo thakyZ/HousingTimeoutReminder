@@ -15,6 +15,6 @@ jobs:
       internal_name: HousingTimeoutReminder
       solution_name: HousingTimeoutReminder
       build_configuration: Release
-      personal_plugin_repo: thakyZ/MyDalamudPluginRepo
+      personal_plugin_repo: thakyZ/MyDalamudPlugins
       personal_plugin_repo_branch: main
     secrets: inherit
